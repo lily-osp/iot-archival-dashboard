@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Archival Background -->
+  <rect width="512" height="512" fill="#E8E0D0"/>
+  
+  <!-- Outer Boundary Frame -->
+  <rect x="64" y="64" width="384" height="384" fill="none" stroke="#2A2520" stroke-width="32" rx="16"/>
+  
+  <!-- Archival Accent Block (Museum Label) -->
+  <path d="M 64 80 Q 64 64 80 64 L 224 64 L 224 192 L 64 192 Z" fill="#8B1A1A"/>
+  
+  <!-- Structural Lines / Data Tracks -->
+  <rect x="144" y="272" width="224" height="32" fill="#2A2520"/>
+  <rect x="144" y="352" width="128" height="32" fill="#2A2520"/>
+</svg>
