@@ -172,7 +172,7 @@ export default function Home() {
         {widgets.length > 0 ? (
           widgets.map((widget) => (
             <div key={widget.id} className="relative group">
-              <RealtimeWidget widget={widget} onEdit={() => handleOpenEdit(widget)} />
+              <RealtimeWidget widget={widget} initialValue={discoveredFeeds.find(f => f.key === widget.feedKey)?.last_value} onEdit={() => handleOpenEdit(widget)} />
             </div>
           ))
         ) : (
@@ -320,10 +320,16 @@ export default function Home() {
   );
 }
 
-function RealtimeWidget({ widget, onEdit }: { widget: any; onEdit: () => void }) {
-  const [value, setValue] = useState<string | null>(null);
+function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initialValue?: string; onEdit: () => void }) {
+  const [value, setValue] = useState<string | null>(initialValue || null);
   const [history, setHistory] = useState<any[]>([]);
   const settings = JSON.parse(widget.settings || "{}");
+
+  useEffect(() => {
+    if (initialValue !== undefined && value === null) {
+      setValue(initialValue);
+    }
+  }, [initialValue]);
 
   const fetchHistory = async () => {
     if (widget.type !== "chart") return;
