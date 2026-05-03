@@ -51,6 +51,15 @@ export function MuseumLabel({
     val: isNaN(parseFloat(d.value)) ? 0 : parseFloat(d.value)
   })).reverse();
 
+  const [localSliderValue, setLocalSliderValue] = useState<string | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (type === "slider" && value !== undefined && value !== null) {
+      setLocalSliderValue(value.toString());
+    }
+  }, [value, type]);
+
   return (
     <div className={cn(
       "border border-archival-muted p-6 bg-archival-surface rounded-[6px] animate-entrance relative group transition-all duration-[225ms] ease-[cubic-bezier(0.65,0,0.35,1)] hover:border-archival-accent hover:-translate-y-[2px] flex flex-col", 
@@ -123,15 +132,22 @@ export function MuseumLabel({
         {type === "slider" && (
           <div className="space-y-4 p-4 rounded-[6px] border border-archival-muted/50 bg-archival-bg/50">
             <div className="flex justify-between items-end">
-              <span className="text-[2.25rem] font-bold font-sans tracking-[-0.03em] leading-[1.1] text-archival-fg">{value ?? 0}</span>
+              <span className="text-[2.25rem] font-bold font-sans tracking-[-0.03em] leading-[1.1] text-archival-fg">{localSliderValue ?? value ?? 0}</span>
               <span className="text-[0.625rem] font-mono font-semibold text-archival-muted-fg tracking-[0.1em] uppercase">{unit}</span>
             </div>
             <input 
               type="range" 
               min="0" 
               max="255" 
-              value={parseInt(value as string || "0")} 
-              onChange={(e) => onControlChange?.(e.target.value)}
+              value={parseInt(localSliderValue || value as string || "0")} 
+              onChange={(e) => {
+                const val = e.target.value;
+                setLocalSliderValue(val);
+                if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+                debounceTimerRef.current = setTimeout(() => {
+                  onControlChange?.(val);
+                }, 500);
+              }}
               className="w-full h-1 bg-archival-muted rounded-full appearance-none cursor-pointer accent-archival-accent hover:accent-[#A02020] transition-colors duration-[150ms]"
             />
           </div>
