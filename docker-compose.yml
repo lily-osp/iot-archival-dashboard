@@ -1,0 +1,34 @@
+services:
+  web:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+    ports:
+      - "3010:3000"
+    environment:
+      - DATABASE_URL=file:/app/data/dev.db
+      - ADAFRUIT_IO_USERNAME=${ADAFRUIT_IO_USERNAME}
+      - ADAFRUIT_IO_KEY=${ADAFRUIT_IO_KEY}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - ./data:/app/data
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6381:6379"
+    restart: always
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: always
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=eyJhIjoiMGFlZTJhNzFkZTQ3OWM0NTc4YzIxNzczN2ZmYWNlYjMiLCJ0IjoiZDRmOTIwY2UtNGYwNi00NTVlLThkY2EtMjcyMzVhYTVkYjBjIiwicyI6InF0SHNLS1hGWFNTbStKN2YvaTg1U2ppVWpYU3lNek4zUEExZG14VmFBSkNPRjR3MHZNOEk3QlVjTktGS2FpQ0dlelhiMDdDcTFXVVRzZ2RoWUFvYzhRPT0ifQ==
+    depends_on:
+      - web
+
+volumes:
+  data:

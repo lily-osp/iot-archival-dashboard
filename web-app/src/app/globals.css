@@ -1,0 +1,90 @@
+@import "tailwindcss";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/600.css";
+
+@theme {
+  /* Colors */
+  --color-archival-bg: #E8E0D0;
+  --color-archival-fg: #2A2520;
+  --color-archival-surface: #EFE9DC;
+  --color-archival-accent: #8B1A1A;
+  --color-archival-muted: #DDD5C5;
+  --color-archival-muted-fg: #7A7068;
+  --color-archival-accent-hover: #A02020;
+  --color-archival-accent-active: #6B1212;
+  --color-archival-success: #3A6B3A;
+  --color-archival-warning: #8B6B1A;
+
+  /* Typography */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing (4px base) */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-24: 6rem;
+
+  /* Animation */
+  --animate-entrance: reveal 225ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-state: state-change 150ms cubic-bezier(0.65, 0, 0.35, 1);
+
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes state-change {
+    from { opacity: 0.8; }
+    to { opacity: 1; }
+  }
+}
+
+:root {
+  --background: var(--color-archival-bg);
+  --foreground: var(--color-archival-fg);
+}
+
+body {
+  background-color: var(--color-archival-bg);
+  color: var(--color-archival-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Blueprint Grid */
+.blueprint-grid {
+  background-image: linear-gradient(to right, rgba(191,182,166,0.1) 1px, transparent 1px);
+  background-size: 8.333333% 100%;
+}
+
+/* Archival Noise Grain */
+.archival-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Museum Label Metadata */
+.museum-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  color: var(--color-archival-muted-fg);
+}

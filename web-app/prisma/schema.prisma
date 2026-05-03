@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // In a real app, use hashing (bcrypt)
+  role      String   @default("user") // "admin", "user", "demo"
+  createdAt DateTime @default(now())
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Dashboard {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  widgets   Widget[]
+}
+
+model Widget {
+  id          String    @id @default(cuid())
+  type        String    // "gauge", "toggle", "chart", "slider"
+  label       String
+  feedKey     String
+  feedName    String
+  settings    String    // JSON string for widget-specific settings
+  x           Int
+  y           Int
+  w           Int
+  h           Int
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  dashboardId String
+}
+
+model FeedConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  lastValue   String?
+  updatedAt   DateTime @updatedAt
+}
