@@ -136,6 +136,30 @@ export async function sendFeedData(feedKey: string, value: string): Promise<AioD
 
   if (!response.ok) {
     const errorText = await response.text();
+    
+    if (response.status === 404) {
+      console.log(`System Archive: Feed ${feedKey} not found during send. Auto-provisioning...`);
+      await ensureFeed(feedKey, feedKey);
+      
+      // Retry send
+      const retryResponse = await fetch(url, {
+        method: "POST",
+        headers: {
+          "X-AIO-Key": key,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value }),
+      });
+
+      if (!retryResponse.ok) {
+        const retryErrorText = await retryResponse.text();
+        console.error(`System Archive: Adafruit IO POST retry failed [${retryResponse.status}]:`, retryErrorText);
+        throw new Error(`Failed to send feed data after provisioning: ${retryResponse.statusText} (${retryErrorText})`);
+      }
+      
+      return retryResponse.json();
+    }
+
     console.error(`System Archive: Adafruit IO POST failed [${response.status}]:`, errorText);
     throw new Error(`Failed to send feed data: ${response.statusText} (${errorText})`);
   }
