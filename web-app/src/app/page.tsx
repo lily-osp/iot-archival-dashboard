@@ -22,7 +22,7 @@ export default function Home() {
   const [formData, setFormData] = useState({
     label: "",
     feedKey: "",
-    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text",
+    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream",
     unit: "",
     min: "0",
     max: "255"
@@ -221,7 +221,7 @@ export default function Home() {
           />
 
           <div className="grid grid-cols-2 gap-10">
-            <Select 
+              <Select 
               label="Widget Type"
               value={formData.type}
               onChange={(val) => setFormData({ ...formData, type: val as any })}
@@ -232,7 +232,10 @@ export default function Home() {
                 { value: "indicator", label: "INDICATOR (STATUS)" },
                 { value: "switch", label: "SWITCH (TOGGLE)" },
                 { value: "button", label: "BUTTON (TRIGGER)" },
-                { value: "slider", label: "SLIDER (RANGE)" },                { value: "dump", label: "DATA_DUMP (WRITE)" },
+                { value: "slider", label: "SLIDER (RANGE)" },
+                { value: "gauge", label: "GAUGE (DIAL)" },
+                { value: "stream", label: "STREAM (DATA_LOGS)" },
+                { value: "dump", label: "DATA_DUMP (WRITE)" },
               ]}
               required
             />
@@ -244,7 +247,7 @@ export default function Home() {
             />
           </div>
 
-          {formData.type === "slider" && (
+          {(formData.type === "slider" || formData.type === "gauge") && (
             <div className="grid grid-cols-2 gap-10 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
               <Input 
                 label="Low Threshold (Min)"
@@ -263,7 +266,7 @@ export default function Home() {
                 required
               />
               <div className="col-span-2 text-[0.625rem] font-mono text-archival-muted-fg uppercase tracking-[0.1em]">
-                SLIDER_RANGE_SPECIFICATION
+                {formData.type.toUpperCase()}_RANGE_SPECIFICATION
               </div>
             </div>
           )}
@@ -364,7 +367,7 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
   }, [initialValue]);
 
   const fetchHistory = async () => {
-    if (widget.type !== "chart") return;
+    if (widget.type !== "chart" && widget.type !== "stream") return;
     try {
       const res = await fetch(`/api/feeds/${widget.feedKey}/history`);
       if (res.ok) setHistory(await res.json());
@@ -380,8 +383,8 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
     eventSource.onmessage = (event) => {
       if (!event.data.includes("Connected to")) {
         setValue(event.data);
-        if (widget.type === "chart") {
-          setHistory(prev => [{ value: event.data, created_at: new Date().toISOString() }, ...prev].slice(0, 20));
+        if (widget.type === "chart" || widget.type === "stream") {
+          setHistory(prev => [{ value: event.data, created_at: new Date().toISOString() }, ...prev].slice(0, widget.type === "stream" ? 50 : 20));
         }
       }
     };

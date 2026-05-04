@@ -77,6 +77,8 @@ export default function DocsPage() {
                 { name: "SWITCH (TOGGLE)", desc: "Boolean control gate. Sends '1' or '0' commands to the attached feed." },
                 { name: "BUTTON (TRIGGER)", desc: "Momentary pulse trigger. Sends a '1' signal followed by an automatic '0' reset after 200ms." },
                 { name: "SLIDER (RANGE)", desc: "Analog control surface. Supports custom Low/High thresholds (e.g. 0-100% or -10 to 50°C)." },
+                { name: "GAUGE (DIAL)", desc: "Semi-circular analog dial indicating a value's position between a configured minimum and maximum threshold." },
+                { name: "STREAM (DATA_LOGS)", desc: "A live, scrolling terminal-like stream of historical and incoming string or numeric data events." },
                 { name: "DATA_DUMP (WRITE)", desc: "Unlimited capacity buffer for sending large string configurations or manual logs." }
               ].map((type) => (
                 <div key={type.name} className="p-6 border border-archival-muted rounded-[6px] bg-archival-surface">

@@ -45,7 +45,7 @@ export function MuseumLabel({
   min?: number;
   max?: number;
   className?: string;
-  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button";
+  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button" | "gauge" | "stream";
   onControlChange?: (value: string) => void;
   onHeaderClick?: () => void;
   history?: any[];
@@ -68,7 +68,7 @@ export function MuseumLabel({
   return (
     <div className={cn(
       "border border-archival-muted p-6 bg-archival-surface rounded-[6px] animate-entrance relative group transition-all duration-[225ms] ease-[cubic-bezier(0.65,0,0.35,1)] hover:border-archival-accent hover:-translate-y-[2px] flex flex-col", 
-      type === "chart" || type === "dump" ? "col-span-1 md:col-span-2 row-span-1 min-h-[350px]" : "h-full min-h-[220px]",
+      type === "chart" || type === "dump" || type === "stream" ? "col-span-1 md:col-span-2 row-span-1 min-h-[350px]" : "h-full min-h-[220px]",
       className
     )}>
       {/* Component Header Metadata */}
@@ -234,6 +234,44 @@ export function MuseumLabel({
             <div className="flex justify-between items-center text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-muted-fg uppercase">
               <span>BUFFER_CAPACITY_UNLIMITED</span>
               <span>STATE: {value ? "RECORD_HELD" : "WAITING_FOR_DATA"}</span>
+            </div>
+          </div>
+        )}
+
+        {type === "gauge" && (
+          <div className="flex flex-col items-center justify-center p-4 relative h-full">
+            <svg className="w-full max-w-[200px] h-auto overflow-visible" viewBox="0 0 100 50">
+              <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" className="text-archival-muted/30" />
+              <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" className="text-archival-accent transition-all duration-500 ease-out" 
+                strokeDasharray={`${Math.max(0, Math.min(100, ((parseFloat(value as string || min.toString()) - min) / (max - min)) * 100)) * 1.2566}, 200`} />
+            </svg>
+            <div className="absolute bottom-4 flex items-baseline gap-1">
+              <span className="text-[1.5rem] font-bold font-sans tracking-[-0.02em] leading-none text-archival-fg">{value ?? min}</span>
+              {unit && <span className="text-[0.625rem] font-mono text-archival-muted-fg uppercase tracking-[0.1em]">{unit}</span>}
+            </div>
+            <div className="flex justify-between w-full max-w-[200px] mt-2 px-2 text-[0.5rem] font-mono text-archival-muted-fg">
+              <span>{min}</span>
+              <span>{max}</span>
+            </div>
+          </div>
+        )}
+
+        {type === "stream" && (
+          <div className="flex flex-col h-full bg-[rgba(240,237,228,0.5)] border border-archival-muted rounded-[6px] overflow-hidden">
+            <div className="flex-1 p-4 overflow-y-auto font-mono text-[0.75rem] flex flex-col gap-2">
+              {history.map((d, i) => (
+                <div key={i} className="flex gap-4 text-archival-fg border-b border-archival-muted/20 pb-2 last:border-0 last:pb-0">
+                  <span className="text-archival-muted-fg shrink-0 opacity-60 w-[60px]">
+                    {new Date(d.created_at).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                  <span className="break-all font-medium text-archival-accent/90">{d.value}</span>
+                </div>
+              ))}
+              {history.length === 0 && (
+                <div className="text-archival-muted-fg italic opacity-50 flex h-full items-center justify-center pt-8 pb-8">
+                  NO_DATA_STREAM_FOUND
+                </div>
+              )}
             </div>
           </div>
         )}
