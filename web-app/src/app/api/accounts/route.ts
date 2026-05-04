@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { connectAccountMqtt } from "@/lib/mqtt";
 
 export async function GET() {
   const session = await getSession();
@@ -35,6 +36,10 @@ export async function POST(request: Request) {
         key: data.key,
       }
     });
+    
+    // Connect new account to MQTT dynamically
+    connectAccountMqtt(account.id, account.username, account.key);
+    
     return NextResponse.json({
       id: account.id,
       name: account.name,

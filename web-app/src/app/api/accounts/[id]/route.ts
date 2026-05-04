@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { connectAccountMqtt, disconnectAccountMqtt } from "@/lib/mqtt";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -11,6 +12,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     await prisma.aioAccount.delete({
       where: { id }
     });
+    
+    // Disconnect from MQTT dynamically
+    disconnectAccountMqtt(id);
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
@@ -32,6 +37,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         ...(data.key ? { key: data.key } : {})
       }
     });
+    
+    // Reconnect if credentials changed
+    disconnectAccountMqtt(account.id);
+    connectAccountMqtt(account.id, account.username, account.key);
+    
     return NextResponse.json({
       id: account.id,
       name: account.name,

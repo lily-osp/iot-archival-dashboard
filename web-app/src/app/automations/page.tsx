@@ -186,7 +186,7 @@ export default function AutomationsPage() {
     { value: "", label: "SELECT_FEED..." },
     ...discoveredFeeds.map(feed => ({ 
       value: feed.key, 
-      label: `${feed.name.toUpperCase()} (${feed.key})` 
+      label: `${feed.name.toUpperCase()} (${feed.key})${feed.accountName ? ` - ${feed.accountName}` : ''}` 
     }))
   ];
 
