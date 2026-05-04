@@ -25,6 +25,18 @@ export async function GET() {
           },
         });
       }
+
+      // Prune local SQLite feeds that no longer exist on Adafruit IO
+      // We keep feeds that might have been manually added but fail to sync
+      const remoteFeedKeys = feeds.map(f => f.key);
+      if (remoteFeedKeys.length > 0) {
+        await prisma.feedConfig.deleteMany({
+          where: {
+            key: { notIn: remoteFeedKeys },
+            NOT: { key: { startsWith: "demo_" } } // Protect demo feeds if any
+          }
+        });
+      }
     } catch (e) {
       console.warn("Adafruit IO fetch failed, using local feeds only");
     }
