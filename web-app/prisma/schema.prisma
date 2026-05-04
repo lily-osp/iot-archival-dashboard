@@ -46,12 +46,24 @@ model Widget {
   dashboardId String
 }
 
+model AioAccount {
+  id          String       @id @default(cuid())
+  name        String
+  username    String       @unique
+  key         String
+  feeds       FeedConfig[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
 model FeedConfig {
-  id          String   @id @default(cuid())
-  key         String   @unique
+  id          String      @id @default(cuid())
+  key         String      @unique
   name        String
   lastValue   String?
-  updatedAt   DateTime @updatedAt
+  accountId   String?
+  account     AioAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime    @updatedAt
 }
 
 model Automation {

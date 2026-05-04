@@ -1,52 +1,126 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shell, Button, MuseumLabel, Input } from "@/components/ui/archival";
-import { ArrowLeft, Save, AlertCircle, Database, Shield } from "lucide-react";
+import { Shell, Button, MuseumLabel, Input, Modal, ConfirmationModal, toast } from "@/components/ui/archival";
+import { ArrowLeft, Save, AlertCircle, Database, Shield, Plus, Trash2, Edit3, Key } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
   const [configs, setConfigs] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const [isDemo, setIsDemo] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then(res => res.json())
-      .then(data => {
-        if (data.user?.role === "demo") setIsDemo(true);
-      });
+  // Account Modal State
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [accountFormData, setAccountFormData] = useState({ name: "", username: "", key: "" });
 
-    fetch("/api/settings")
-      .then(res => res.json())
-      .then(data => {
-        setConfigs(data);
-        setIsLoading(false);
-      });
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      const [userRes, settingsRes, accountsRes] = await Promise.all([
+        fetch("/api/auth/me"),
+        fetch("/api/settings"),
+        fetch("/api/accounts")
+      ]);
+
+      if (userRes.ok) {
+        const data = await userRes.json();
+        if (data.user?.role === "demo") setIsDemo(true);
+      }
+      
+      if (settingsRes.ok) setConfigs((await settingsRes.json()).filter((c: any) => !["ADAFRUIT_IO_USERNAME", "ADAFRUIT_IO_KEY"].includes(c.key)));
+      if (accountsRes.ok) setAccounts(await accountsRes.json());
+    } catch (err) {
+      toast.error("FAILED_TO_SYNC_SETTINGS");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  const handleUpdate = async (key: string, value: string) => {
+  const handleUpdateConfig = async (key: string, value: string) => {
     if (isDemo) return;
     
     setIsSaving(true);
-    setMessage("");
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
         body: JSON.stringify({ key, value }),
       });
       if (res.ok) {
-        setMessage("SETTING_COMMITTED_SUCCESSFULLY");
+        toast.success("SETTING_COMMITTED_SUCCESSFULLY");
       } else {
         const data = await res.json();
-        setMessage(`ERROR: ${data.error}`);
+        toast.error(`ERROR: ${data.error}`);
       }
     } catch (err) {
-      setMessage("FAILED_TO_SYNC_SETTING");
+      toast.error("FAILED_TO_SYNC_SETTING");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleOpenAddAccount = () => {
+    setEditingAccount(null);
+    setAccountFormData({ name: "", username: "", key: "" });
+    setIsAccountModalOpen(true);
+  };
+
+  const handleOpenEditAccount = (account: any) => {
+    setEditingAccount(account);
+    setAccountFormData({ name: account.name, username: account.username, key: "" }); // Leave key blank unless changing
+    setIsAccountModalOpen(true);
+  };
+
+  const handleSaveAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isDemo) return;
+
+    try {
+      const url = editingAccount ? `/api/accounts/${editingAccount.id}` : "/api/accounts";
+      const method = editingAccount ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        body: JSON.stringify(accountFormData),
+      });
+
+      if (res.ok) {
+        toast.success(editingAccount ? "ACCOUNT_UPDATED" : "ACCOUNT_ADDED");
+        setIsAccountModalOpen(false);
+        fetchData();
+      } else {
+        const data = await res.json();
+        toast.error(`ERROR: ${data.error}`);
+      }
+    } catch (err) {
+      toast.error("FAILED_TO_SAVE_ACCOUNT");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!accountToDelete || isDemo) return;
+    
+    try {
+      const res = await fetch(`/api/accounts/${accountToDelete}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("ACCOUNT_EXPUNGED");
+        setIsDeleteModalOpen(false);
+        fetchData();
+      } else {
+        const data = await res.json();
+        toast.error(`ERROR: ${data.error}`);
+      }
+    } catch (err) {
+      toast.error("FAILED_TO_DELETE_ACCOUNT");
     }
   };
 
@@ -69,10 +143,11 @@ export default function SettingsPage() {
         <div className="absolute top-0 right-0 p-4 opacity-5 font-mono text-[10px] tracking-widest uppercase pointer-events-none">
         SECURE_ACCESS_LAYER_7
         </div>
-        </header>
+      </header>
 
-        {isDemo && (
-        <div className="mb-16 p-8 border border-archival-accent bg-archival-accent/5 flex items-start gap-6 rounded-[6px]">          <Shield className="w-8 h-8 text-archival-accent shrink-0" />
+      {isDemo && (
+        <div className="mb-16 p-8 border border-archival-accent bg-archival-accent/5 flex items-start gap-6 rounded-[6px]">
+          <Shield className="w-8 h-8 text-archival-accent shrink-0" />
           <div className="space-y-1">
             <div className="text-[12px] font-mono font-bold text-archival-accent tracking-widest uppercase">DEMO_PERMISSIONS_ACTIVE</div>
             <p className="text-archival-muted-fg text-sm max-w-2xl leading-relaxed">
@@ -83,7 +158,49 @@ export default function SettingsPage() {
         </div>
       )}
 
+      <div className="mb-16 space-y-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Key className="w-6 h-6 text-archival-fg" />
+            <h2 className="text-[1.5rem] font-bold font-sans tracking-[-0.02em] uppercase text-archival-fg">Adafruit IO Accounts</h2>
+          </div>
+          <Button onClick={handleOpenAddAccount} disabled={isDemo}>
+            <Plus className="w-4 h-4 mr-2" /> ADD_ACCOUNT
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {accounts.map(acc => (
+            <div key={acc.id} className="border border-archival-muted p-6 bg-archival-surface rounded-[6px] relative group hover:border-archival-accent transition-colors">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="text-[1rem] font-bold tracking-[-0.02em] text-archival-fg">{acc.name}</div>
+                  <div className="text-[0.625rem] font-mono tracking-widest uppercase text-archival-muted-fg">{acc.username}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleOpenEditAccount(acc)} className="p-2 text-archival-muted-fg hover:text-archival-fg transition-colors">
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => { setAccountToDelete(acc.id); setIsDeleteModalOpen(true); }} disabled={isDemo} className="p-2 text-archival-muted-fg hover:text-archival-accent transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-[0.625rem] font-mono tracking-widest uppercase text-archival-muted-fg/50 border-t border-archival-muted/20 pt-4 mt-4">
+                ID: {acc.id}
+              </div>
+            </div>
+          ))}
+          {accounts.length === 0 && (
+            <div className="col-span-full p-12 text-center border border-dashed border-archival-muted/50 bg-archival-surface rounded-[6px]">
+              <div className="text-[0.75rem] font-mono tracking-widest uppercase text-archival-muted-fg">NO_ACCOUNTS_PROVISIONED</div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="space-y-0 border-t border-l border-archival-muted/20">
+        <h2 className="p-8 border-b border-r border-archival-muted/20 text-[1.5rem] font-bold font-sans tracking-[-0.02em] uppercase text-archival-fg bg-archival-surface">General Settings</h2>
         {configs.map((config) => (
           <div key={config.key} className="grid grid-cols-1 md:grid-cols-4 gap-0 border-b border-r border-archival-muted/20 group hover:bg-white transition-colors">
             <div className="md:col-span-1 p-8 border-r border-archival-muted/10 bg-archival-bg/5">
@@ -96,7 +213,7 @@ export default function SettingsPage() {
             <div className="md:col-span-2 p-8 flex items-center gap-6">
               <Input
                 defaultValue={config.value}
-                onBlur={(e) => handleUpdate(config.key, e.target.value)}
+                onBlur={(e) => handleUpdateConfig(config.key, e.target.value)}
                 disabled={isSaving}
                 className="flex-1 bg-transparent border-none p-0 text-xl font-bold font-sans tracking-tight lowercase focus:bg-transparent"
               />
@@ -108,12 +225,44 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {message && (
-        <div className="fixed bottom-12 right-12 animate-entrance z-[200]">
-          <MuseumLabel label="SYSTEM_LOG" value={message} className="shadow-2xl border-archival-accent min-w-[300px]" />
-        </div>
-      )}
-      
+      <Modal isOpen={isAccountModalOpen} onClose={() => setIsAccountModalOpen(false)} title={editingAccount ? "EDIT_ACCOUNT_RECORD" : "PROVISION_ACCOUNT_RECORD"}>
+        <form onSubmit={handleSaveAccount} className="space-y-6">
+          <Input 
+            label="Account Display Name" 
+            value={accountFormData.name} 
+            onChange={e => setAccountFormData({...accountFormData, name: e.target.value})} 
+            placeholder="e.g. Primary Free Account" 
+            required 
+          />
+          <Input 
+            label="Adafruit IO Username" 
+            value={accountFormData.username} 
+            onChange={e => setAccountFormData({...accountFormData, username: e.target.value})} 
+            placeholder="e.g. adafruit_user" 
+            required 
+          />
+          <Input 
+            label={editingAccount ? "Adafruit IO Key (Leave blank to keep unchanged)" : "Adafruit IO Key"} 
+            type="password"
+            value={accountFormData.key} 
+            onChange={e => setAccountFormData({...accountFormData, key: e.target.value})} 
+            placeholder={editingAccount ? "********" : "aio_..."} 
+            required={!editingAccount}
+          />
+          <div className="pt-6">
+            <Button type="submit" className="w-full">{editingAccount ? "UPDATE_RECORD" : "COMMIT_RECORD"}</Button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteAccount}
+        title="EXPUNGE_ACCOUNT_RECORD"
+        message="Are you sure you want to permanently delete this account? All associated widgets and feeds will lose their connection to Adafruit IO."
+      />
+
       <div className="mt-auto p-8 opacity-20 font-mono text-[9px] tracking-[0.5em] uppercase text-center w-full border-t border-archival-muted/20">
         END_OF_PARAMETER_RECORDS
       </div>

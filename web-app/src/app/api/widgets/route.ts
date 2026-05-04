@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     // Ensure feed exists on Adafruit IO
     if (data.feedKey) {
       try {
-        await ensureFeed(data.feedKey, data.label);
+        await ensureFeed(data.feedKey, data.label, data.accountId || undefined);
       } catch (e) {
         console.error("System Archive: Failed to provision feed:", e);
       }

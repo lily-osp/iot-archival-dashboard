@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const [widgets, setWidgets] = useState<any[]>([]);
   const [discoveredFeeds, setDiscoveredFeeds] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [dashboardTitle, setDashboardTitle] = useState("IoT Archival Dashboard");
@@ -25,23 +26,26 @@ export default function Home() {
     type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream",
     unit: "",
     min: "0",
-    max: "255"
+    max: "255",
+    accountId: ""
   });
   const [isManualFeed, setIsManualFeed] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [userRes, widgetRes, settingsRes, feedRes] = await Promise.all([
+      const [userRes, widgetRes, settingsRes, feedRes, accountsRes] = await Promise.all([
         fetch("/api/auth/me"),
         fetch("/api/widgets"),
         fetch("/api/settings"),
-        fetch("/api/feeds")
+        fetch("/api/feeds"),
+        fetch("/api/accounts")
       ]);
 
       if (userRes.ok) setUser((await userRes.json()).user);
       if (widgetRes.ok) setWidgets(await widgetRes.json());
       if (feedRes.ok) setDiscoveredFeeds(await feedRes.json());
+      if (accountsRes.ok) setAccounts(await accountsRes.json());
       
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
@@ -58,7 +62,7 @@ export default function Home() {
 
   const handleOpenCreate = () => {
     setEditingWidget(null);
-    setFormData({ label: "", feedKey: "", type: "monitor", unit: "", min: "0", max: "255" });
+    setFormData({ label: "", feedKey: "", type: "monitor", unit: "", min: "0", max: "255", accountId: accounts.length > 0 ? accounts[0].id : "" });
     setIsManualFeed(false);
     setIsModalOpen(true);
   };
@@ -67,13 +71,15 @@ export default function Home() {
     setEditingWidget(widget);
     setIsManualFeed(false);
     const settings = JSON.parse(widget.settings || "{}");
+    const feed = discoveredFeeds.find(f => f.key === widget.feedKey);
     setFormData({
       label: widget.label,
       feedKey: widget.feedKey,
       type: widget.type as any,
       unit: settings.unit || "",
       min: settings.min?.toString() || "0",
-      max: settings.max?.toString() || "255"
+      max: settings.max?.toString() || "255",
+      accountId: feed?.accountId || ""
     });
     setIsModalOpen(true);
   };
@@ -289,14 +295,14 @@ export default function Home() {
                 { value: "__MANUAL__", label: "CREATE_NEW_FEED (MANUAL_ENTRY)" },
                 ...discoveredFeeds.map(feed => ({ 
                   value: feed.key, 
-                  label: `${feed.name.toUpperCase()} (${feed.key})` 
+                  label: `${feed.accountName ? `[${feed.accountName}] ` : ''}${feed.name.toUpperCase()} (${feed.key})` 
                 }))
               ]}
               required
             />
 
             {isManualFeed && (
-              <div className="animate-entrance">
+              <div className="animate-entrance space-y-6">
                 <Input 
                   label="New Feed Key Identifier"
                   value={formData.feedKey}
@@ -304,6 +310,16 @@ export default function Home() {
                   placeholder="e.g. living-room-light"
                   required
                 />
+                
+                {accounts.length > 0 && (
+                  <Select
+                    label="Target Adafruit IO Account"
+                    value={formData.accountId}
+                    onChange={(val) => setFormData({ ...formData, accountId: val })}
+                    options={accounts.map(acc => ({ value: acc.id, label: acc.name }))}
+                    required
+                  />
+                )}
                 <div className="mt-2 text-[8px] font-mono text-archival-muted-fg tracking-widest uppercase opacity-40">
                   SYSTEM_NOTE: THIS_FEED_WILL_BE_AUTOMATICALLY_PROVISIONED_ON_COMMIT
                 </div>

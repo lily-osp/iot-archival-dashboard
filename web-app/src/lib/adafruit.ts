@@ -1,16 +1,25 @@
 import prisma from "./prisma";
 
-async function getAioCredentials() {
-  const configs = await prisma.systemConfig.findMany({
-    where: {
-      key: { in: ["ADAFRUIT_IO_USERNAME", "ADAFRUIT_IO_KEY"] },
-    },
-  });
+async function getAioCredentials(accountId?: string, feedKey?: string) {
+  if (accountId) {
+    const account = await prisma.aioAccount.findUnique({ where: { id: accountId } });
+    if (account) return { username: account.username, key: account.key, accountId: account.id };
+  }
+  
+  if (feedKey) {
+    const feed = await prisma.feedConfig.findUnique({
+      where: { key: feedKey },
+      include: { account: true }
+    });
+    if (feed?.account) {
+      return { username: feed.account.username, key: feed.account.key, accountId: feed.account.id };
+    }
+  }
 
-  const username = configs.find(c => c.key === "ADAFRUIT_IO_USERNAME")?.value || process.env.ADAFRUIT_IO_USERNAME;
-  const key = configs.find(c => c.key === "ADAFRUIT_IO_KEY")?.value || process.env.ADAFRUIT_IO_KEY;
+  const fallback = await prisma.aioAccount.findFirst();
+  if (fallback) return { username: fallback.username, key: fallback.key, accountId: fallback.id };
 
-  return { username, key };
+  return { username: process.env.ADAFRUIT_IO_USERNAME, key: process.env.ADAFRUIT_IO_KEY, accountId: null };
 }
 
 export interface AioFeed {
@@ -20,6 +29,7 @@ export interface AioFeed {
   description: string;
   last_value: string;
   updated_at: string;
+  accountId?: string;
 }
 
 export interface AioData {
@@ -28,13 +38,15 @@ export interface AioData {
   created_at: string;
 }
 
-export async function fetchFeeds(): Promise<AioFeed[]> {
-  const { username, key } = await getAioCredentials();
+export async function fetchFeeds(accountId?: string): Promise<AioFeed[]> {
+  const { username, key, accountId: fetchedAccountId } = await getAioCredentials(accountId);
+  if (!username || !key) return [];
+  
   const BASE_URL = `https://io.adafruit.com/api/v2/${username}`;
 
   const response = await fetch(`${BASE_URL}/feeds`, {
     headers: {
-      "X-AIO-Key": key!,
+      "X-AIO-Key": key,
     },
   });
 
@@ -42,11 +54,12 @@ export async function fetchFeeds(): Promise<AioFeed[]> {
     throw new Error(`Failed to fetch feeds: ${response.statusText}`);
   }
 
-  return response.json();
+  const feeds: AioFeed[] = await response.json();
+  return feeds.map(f => ({ ...f, accountId: fetchedAccountId || undefined }));
 }
 
 export async function fetchFeedData(feedKey: string): Promise<AioData[]> {
-  const { username, key } = await getAioCredentials();
+  const { username, key } = await getAioCredentials(undefined, feedKey);
   const BASE_URL = `https://io.adafruit.com/api/v2/${username}`;
 
   const response = await fetch(`${BASE_URL}/feeds/${feedKey}/data`, {
@@ -62,8 +75,8 @@ export async function fetchFeedData(feedKey: string): Promise<AioData[]> {
   return response.json();
 }
 
-export async function createFeed(name: string, key_name?: string): Promise<AioFeed> {
-  const { username, key } = await getAioCredentials();
+export async function createFeed(name: string, key_name?: string, accountId?: string): Promise<AioFeed> {
+  const { username, key } = await getAioCredentials(accountId);
   const BASE_URL = `https://io.adafruit.com/api/v2/${username}`;
 
   const response = await fetch(`${BASE_URL}/feeds`, {
@@ -86,11 +99,12 @@ export async function createFeed(name: string, key_name?: string): Promise<AioFe
     throw new Error(`Failed to create feed: ${response.statusText} (${errorText})`);
   }
 
-  return response.json();
+  const feed: AioFeed = await response.json();
+  return { ...feed, accountId };
 }
 
-export async function ensureFeed(feedKey: string, name?: string): Promise<AioFeed> {
-  const { username, key } = await getAioCredentials();
+export async function ensureFeed(feedKey: string, name?: string, accountId?: string): Promise<AioFeed> {
+  const { username, key } = await getAioCredentials(accountId, feedKey);
   const BASE_URL = `https://io.adafruit.com/api/v2/${username}`;
 
   // Try to fetch existing feed
@@ -101,20 +115,21 @@ export async function ensureFeed(feedKey: string, name?: string): Promise<AioFee
   });
 
   if (response.ok) {
-    return response.json();
+    const feed: AioFeed = await response.json();
+    return { ...feed, accountId };
   }
 
   // If 404, create it
   if (response.status === 404) {
     console.log(`System Archive: Feed ${feedKey} not found. Provisioning...`);
-    return createFeed(name || feedKey, feedKey);
+    return createFeed(name || feedKey, feedKey, accountId);
   }
 
   throw new Error(`Failed to ensure feed: ${response.statusText}`);
 }
 
 export async function sendFeedData(feedKey: string, value: string): Promise<AioData> {
-  const { username, key } = await getAioCredentials();
+  const { username, key, accountId } = await getAioCredentials(undefined, feedKey);
   
   if (!username || !key) {
     throw new Error("ADAFRUIT_IO_CREDENTIALS_MISSING");
@@ -139,7 +154,7 @@ export async function sendFeedData(feedKey: string, value: string): Promise<AioD
     
     if (response.status === 404) {
       console.log(`System Archive: Feed ${feedKey} not found during send. Auto-provisioning...`);
-      await ensureFeed(feedKey, feedKey);
+      await ensureFeed(feedKey, feedKey, accountId || undefined);
       
       // Retry send
       const retryResponse = await fetch(url, {

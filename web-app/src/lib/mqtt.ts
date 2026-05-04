@@ -2,46 +2,61 @@ import mqtt from "mqtt";
 import redis from "./redis";
 import prisma from "./prisma";
 
-async function getMqttCredentials() {
-  const configs = await prisma.systemConfig.findMany({
-    where: {
-      key: { in: ["ADAFRUIT_IO_USERNAME", "ADAFRUIT_IO_KEY"] },
-    },
-  });
-
-  const username = configs.find(c => c.key === "ADAFRUIT_IO_USERNAME")?.value || process.env.ADAFRUIT_IO_USERNAME;
-  const key = configs.find(c => c.key === "ADAFRUIT_IO_KEY")?.value || process.env.ADAFRUIT_IO_KEY;
-
-  return { username, key };
-}
-
-let client: mqtt.MqttClient | null = null;
+const clients = new Map<string, mqtt.MqttClient>();
 
 export async function getMqttClient() {
-  if (client) return client;
+  // Backwards compatibility/trigger for boot
+  await initializeMqttManager();
+  // Return the first client if needed, or null since we use manager pattern now
+  return Array.from(clients.values())[0] || null;
+}
 
-  const { username, key } = await getMqttCredentials();
+export async function initializeMqttManager() {
+  const accounts = await prisma.aioAccount.findMany();
   
-  if (!username || !key) {
-    console.warn("System Archive: Adafruit IO credentials missing. MQTT listener disabled.");
-    return null;
+  if (accounts.length === 0) {
+    console.warn("System Archive: No AioAccounts found. MQTT listener disabled.");
+    return;
+  }
+
+  for (const account of accounts) {
+    if (!clients.has(account.id)) {
+      connectAccountMqtt(account.id, account.username, account.key);
+    }
+  }
+}
+
+export function disconnectAccountMqtt(accountId: string) {
+  const client = clients.get(accountId);
+  if (client) {
+    client.end(true);
+    clients.delete(accountId);
+    console.log(`System Archive: Disconnected MQTT for account ID ${accountId}`);
+  }
+}
+
+export function connectAccountMqtt(accountId: string, username: string, key: string) {
+  if (clients.has(accountId)) {
+    return; // Already connected
   }
 
   const HOST = "tls://io.adafruit.com";
   const PORT = 8883;
 
   try {
-    client = mqtt.connect(HOST, {
+    const client = mqtt.connect(HOST, {
       port: PORT,
       username: username,
       password: key,
       protocol: "mqtts",
-      reconnectPeriod: 30000, // Wait 30s between retries
+      reconnectPeriod: 30000,
     });
+
+    clients.set(accountId, client);
 
     client.on("connect", () => {
       console.log(`System Archive: Connected to Adafruit IO MQTT for user: ${username}`);
-      client?.subscribe(`${username}/feeds/+`);
+      client.subscribe(`${username}/feeds/+`);
     });
 
     client.on("message", async (topic, message) => {
@@ -122,20 +137,14 @@ export async function getMqttClient() {
     });
 
     client.on("error", (err) => {
-      // Quiet logging for common connection issues
       if (err.message.includes("Connection refused")) {
-        console.error("System Archive: MQTT Connection Refused. Verify Adafruit IO Credentials.");
+        console.error(`System Archive: MQTT Connection Refused for user ${username}. Verify Credentials.`);
       } else {
-        console.error("System Archive: MQTT Error:", err.message);
+        console.error(`System Archive: MQTT Error for user ${username}:`, err.message);
       }
     });
 
-    client.on("close", () => {
-      // No-op to prevent spam
-    });
   } catch (err) {
-    console.error("System Archive: Failed to connect to MQTT.");
+    console.error(`System Archive: Failed to connect to MQTT for user ${username}.`);
   }
-
-  return client;
 }
