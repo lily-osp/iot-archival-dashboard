@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Shell, MuseumLabel, Button, Modal, Input, Select, ConfirmationModal, toast, cn } from "@/components/ui/archival";
-import { Plus, Settings, RefreshCcw, LogOut, User, Trash2, Edit3, Loader2 } from "lucide-react";
+import { Plus, Settings, RefreshCcw, LogOut, User, Trash2, Edit3, Loader2, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -155,6 +155,12 @@ export default function Home() {
             <RefreshCcw className={cn("w-4 h-4 mr-2", isLoading && "animate-spin")} />
             SYNC_ARCHIVE
           </Button>
+          <Link href="/automations">
+            <Button variant="ghost" className="border-archival-fg/20 hover:border-archival-fg">
+              <Zap className="w-4 h-4 mr-2" />
+              LOGIC_MATRIX
+            </Button>
+          </Link>
           <Button onClick={handleOpenCreate} className="transition-all">
             <Plus className="w-4 h-4 mr-2" />
             NEW_SPECIMEN

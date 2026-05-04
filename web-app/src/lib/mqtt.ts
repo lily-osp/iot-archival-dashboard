@@ -44,13 +44,53 @@ export async function getMqttClient() {
       client?.subscribe(`${username}/feeds/+`);
     });
 
-    client.on("message", (topic, message) => {
+    client.on("message", async (topic, message) => {
       const feedKey = topic.split("/").pop();
       const value = message.toString();
 
       if (feedKey) {
         redis.publish(`feed:${feedKey}`, value);
         redis.set(`last:${feedKey}`, value);
+
+        try {
+          const automations = await prisma.automation.findMany({
+            where: { conditionFeedKey: feedKey, isActive: true }
+          });
+          
+          for (const rule of automations) {
+            let triggered = false;
+            const msgVal = parseFloat(value);
+            const condVal = parseFloat(rule.conditionValue);
+            
+            if (!isNaN(msgVal) && !isNaN(condVal)) {
+              switch (rule.conditionOperator) {
+                case '>': triggered = msgVal > condVal; break;
+                case '<': triggered = msgVal < condVal; break;
+                case '>=': triggered = msgVal >= condVal; break;
+                case '<=': triggered = msgVal <= condVal; break;
+                case '==': triggered = msgVal === condVal; break;
+                case '!=': triggered = msgVal !== condVal; break;
+              }
+            } else {
+              switch (rule.conditionOperator) {
+                case '==': triggered = value === rule.conditionValue; break;
+                case '!=': triggered = value !== rule.conditionValue; break;
+              }
+            }
+
+            if (triggered) {
+              console.log(`System Archive: Rule [${rule.name}] triggered by ${feedKey} = ${value}. executing Action: ${rule.actionFeedKey} -> ${rule.actionValue}`);
+              if (rule.actionFeedKey !== rule.conditionFeedKey) {
+                 const { sendFeedData } = await import("./adafruit");
+                 await sendFeedData(rule.actionFeedKey, rule.actionValue).catch(e => {
+                   console.error(`System Archive: Automation Action Failed:`, e.message);
+                 });
+              }
+            }
+          }
+        } catch(err) {
+          console.error("System Archive: Rule Evaluation Error:", err);
+        }
       }
     });
 

@@ -53,3 +53,16 @@ model FeedConfig {
   lastValue   String?
   updatedAt   DateTime @updatedAt
 }
+
+model Automation {
+  id                String   @id @default(cuid())
+  name              String
+  conditionFeedKey  String
+  conditionOperator String   // '>', '<', '==', '!=', '>=', '<='
+  conditionValue    String
+  actionFeedKey     String
+  actionValue       String
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
