@@ -35,6 +35,7 @@ export default function DocsPage() {
             </div>
             <ul className="space-y-4 text-[0.875rem] font-sans font-medium text-archival-muted-fg">
               <li><a href="#concept" className="hover:text-archival-accent transition-colors">Core Concept</a></li>
+              <li><a href="#multi-account" className="hover:text-archival-accent transition-colors">Multi-Account Hub</a></li>
               <li><a href="#specimens" className="hover:text-archival-accent transition-colors">Specimen Types</a></li>
               <li><a href="#provisioning" className="hover:text-archival-accent transition-colors">Auto-Provisioning</a></li>
               <li><a href="#logic-matrix" className="hover:text-archival-accent transition-colors">Logic Matrix</a></li>
@@ -57,6 +58,26 @@ export default function DocsPage() {
               </p>
               <p>
                 By adopting a strict visual hierarchy—separating narrative content (Plus Jakarta Sans) from technical metadata (JetBrains Mono)—the system ensures that data is both beautiful to observe and rigorous to manage. The system automatically hydrates widgets with their <span className="font-semibold italic">Last Known State</span> from remote feeds upon initialization, ensuring data continuity across reloads.
+              </p>
+            </div>
+          </section>
+
+          <div className="border-t border-archival-muted/20" />
+
+          <section id="multi-account" className="scroll-mt-12">
+            <div className="flex items-center gap-4 mb-6">
+              <Database className="w-6 h-6 text-archival-accent" />
+              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">Multi-Account Aggregation Hub</h2>
+            </div>
+            <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
+              <p className="mb-6">
+                The dashboard acts as an aggregation hub, allowing you to connect and manage multiple Adafruit IO accounts simultaneously. This architecture seamlessly bypasses free-tier limitations by pooling feeds from several accounts into a single, unified interface.
+              </p>
+              <p className="mb-6">
+                <strong className="text-archival-accent">Multi-Broker MQTT Engine:</strong> The system maintains concurrent, real-time MQTT connections to all provisioned accounts, streaming data to a central Redis cache.
+              </p>
+              <p>
+                <strong className="text-archival-accent">Cross-Account Automation:</strong> Because all data is aggregated locally, the Logic Matrix can bridge accounts. You can trigger an automation based on a sensor from Account A, evaluate conditions against a feed in Account B, and execute actions to control a relay on Account C—all seamlessly without manual routing.
               </p>
             </div>
           </section>
