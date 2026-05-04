@@ -346,9 +346,6 @@ export default function Home() {
             <Settings className="w-3 h-3 group-hover:rotate-90 transition-transform duration-[375ms]" />
             <span className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] uppercase">SYSTEM_CONFIGURATION</span>
           </Link>
-          <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] uppercase text-archival-muted-fg">
-            STATUS_OK_LINK_1
-          </div>
         </div>
       </footer>
     </Shell>

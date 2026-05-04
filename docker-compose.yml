@@ -26,7 +26,7 @@ services:
     restart: always
     command: tunnel --no-autoupdate run
     environment:
-      - TUNNEL_TOKEN=eyJhIjoiMGFlZTJhNzFkZTQ3OWM0NTc4YzIxNzczN2ZmYWNlYjMiLCJ0IjoiZDRmOTIwY2UtNGYwNi00NTVlLThkY2EtMjcyMzVhYTVkYjBjIiwicyI6InF0SHNLS1hGWFNTbStKN2YvaTg1U2ppVWpYU3lNek4zUEExZG14VmFBSkNPRjR3MHZNOEk3QlVjTktGS2FpQ0dlelhiMDdDcTFXVVRzZ2RoWUFvYzhRPT0ifQ==
+      - TUNNEL_TOKEN=YOUR_CLOUDFLARE_TUNNEL_TOKEN
     depends_on:
       - web
 

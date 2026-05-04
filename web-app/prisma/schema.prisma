@@ -57,6 +57,9 @@ model FeedConfig {
 model Automation {
   id                String             @id @default(cuid())
   name              String
+  type              String             @default("EVENT") // "EVENT" or "TIME"
+  scheduleCron      String?            // e.g. "0 8 * * *"
+  timezone          String?            // e.g. "Asia/Jakarta"
   conditionMatch    String             @default("ALL")
   conditions        AutomationCondition[]
   actions           AutomationAction[]

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ensureFeed } from "@/lib/adafruit";
+import { upsertRepeatableJob } from "@/lib/bullmq";
 
 export async function GET() {
   const session = await getSession();
@@ -21,7 +22,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
     const automation = await prisma.automation.create({
       data: {
         name: data.name,
+        type: data.type || "EVENT",
+        scheduleCron: data.scheduleCron || null,
+        timezone: data.timezone || null,
         conditionMatch: data.conditionMatch || "ALL",
         isActive: data.isActive !== undefined ? data.isActive : true,
         conditions: {
@@ -64,6 +68,11 @@ export async function POST(request: Request) {
         actions: { orderBy: { order: 'asc' } }
       }
     });
+
+    if (automation.type === "TIME") {
+      await upsertRepeatableJob(automation);
+    }
+
     return NextResponse.json(automation);
   } catch (error) {
     console.error("Automation creation error:", error);

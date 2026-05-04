@@ -119,12 +119,25 @@ export default function DocsPage() {
             </div>
             <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
               <p className="mb-6">
-                The <span className="font-semibold text-archival-accent uppercase tracking-wider">Logic Matrix</span> is the local automation engine. It handles complex pipelines, including 1-to-1, 1-to-many, and many-to-many logic.
+                The <span className="font-semibold text-archival-accent uppercase tracking-wider">Logic Matrix</span> is the local automation engine. It handles complex pipelines, including 1-to-1, 1-to-many, and many-to-many logic. It features both real-time event-based evaluation and robust CRON-based scheduling.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              
+              <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mt-8 mb-4">Event-Based Protocol</h3>
+              <p className="mb-6">
+                Monitors MQTT data streams in real-time. When a feed is updated, the matrix immediately evaluates conditions to trigger configured actions.
+              </p>
+              
+              <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mt-8 mb-4">Time-Based Protocol (Conditional Scheduling)</h3>
+              <p className="mb-6">
+                Leverages BullMQ backed by Redis for robust, timezone-aware scheduling. Time-based rules execute on a CRON schedule (e.g., Every Day at 8 AM). 
+                <br /><br />
+                <strong className="text-archival-accent">Advanced Capability:</strong> Time-based rules can optionally include Condition limits. Before the schedule executes its actions, it queries the local Redis cache for the latest feed states. If the conditions (e.g., <code>temperature &gt; 30</code>) are not met at the exact time of the schedule, the execution is gracefully skipped.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">1. LISTEN & MATCH</div>
-                  <p className="text-[0.75rem]">Subscribes to multiple feeds. Combine conditions using "MATCH ALL" or "MATCH ANY" operators.</p>
+                  <p className="text-[0.75rem]">Subscribes to multiple feeds or cron schedules. Combine conditions using "MATCH ALL" or "MATCH ANY" operators.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">2. EVALUATE</div>

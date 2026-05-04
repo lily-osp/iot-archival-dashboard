@@ -4,8 +4,8 @@
 .env.test.local
 .env.production.local
 
-memory.db
-memory.db-journal
+*.db
+*.db-journal
 data/
 .gemini/
 .wrangler/

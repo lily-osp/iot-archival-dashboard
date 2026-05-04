@@ -1,6 +1,24 @@
 {
-  "name": "web-app",
-  "version": "0.1.0",
+  "name": "iot-archival-dashboard",
+  "version": "1.0.0",
+  "description": "A Swiss Archival-styled IoT dashboard designed as an elegant, robust, and highly functional interface for Adafruit IO. It features real-time updates, historical data tracking, and a powerful local automation engine.",
+  "keywords": [
+    "iot",
+    "dashboard",
+    "adafruit-io",
+    "mqtt",
+    "swiss-design",
+    "automation",
+    "nextjs",
+    "bullmq",
+    "redis"
+  ],
+  "author": "Azzar Budiyanto",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azzarbudiyanto/iot-archival-dashboard.git"
+  },
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,6 +37,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/mqtt": "^0.0.34",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^5.76.5",
     "clsx": "^2.1.1",
     "ioredis": "^5.10.1",
     "jose": "^6.2.3",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ensureFeed } from "@/lib/adafruit";
+import { upsertRepeatableJob, removeRepeatableJob } from "@/lib/bullmq";
 
 export async function PATCH(
   request: NextRequest,
@@ -30,6 +31,9 @@ export async function PATCH(
         where: { id },
         data: {
           name: data.name,
+          type: data.type || "EVENT",
+          scheduleCron: data.scheduleCron || null,
+          timezone: data.timezone || null,
           conditionMatch: data.conditionMatch || "ALL",
           isActive: data.isActive
         }
@@ -79,6 +83,14 @@ export async function PATCH(
       });
     });
 
+    if (automation) {
+      if (automation.type === "TIME") {
+        await upsertRepeatableJob(automation);
+      } else {
+        await removeRepeatableJob(automation.id);
+      }
+    }
+
     return NextResponse.json(automation);
   } catch (error) {
     console.error("Automation update error:", error);
@@ -98,6 +110,9 @@ export async function DELETE(
     await prisma.automation.delete({
       where: { id }
     });
+    
+    await removeRepeatableJob(id);
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Automation delete error:", error);

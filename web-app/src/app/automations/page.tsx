@@ -17,11 +17,50 @@ export default function AutomationsPage() {
   // Form State
   const [formData, setFormData] = useState({
     name: "",
+    type: "EVENT",
+    scheduleType: "daily",
+    scheduleTime: "08:00",
+    scheduleDay: "1",
+    scheduleCron: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     conditionMatch: "ALL",
     conditions: [{ feedKey: "", operator: "==", value: "" }],
     actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
     isActive: true
   });
+
+  const parseCron = (cron: string) => {
+    if (!cron) return { type: "daily", time: "08:00", day: "1" };
+    const parts = cron.split(" ");
+    if (parts.length !== 5) return { type: "custom", time: "08:00", day: "1" };
+    const [min, hour, dom, mon, dow] = parts;
+    
+    const pad = (n: string) => n.length === 1 ? `0${n}` : n;
+    
+    if (dom === "*" && mon === "*") {
+      if (dow === "*") {
+        if (hour === "*") {
+          return { type: "hourly", time: `00:${pad(min)}`, day: "1" };
+        }
+        if (!isNaN(parseInt(hour))) {
+          return { type: "daily", time: `${pad(hour)}:${pad(min)}`, day: "1" };
+        }
+      } else if (!isNaN(parseInt(dow))) {
+         if (!isNaN(parseInt(hour))) {
+           return { type: "weekly", time: `${pad(hour)}:${pad(min)}`, day: dow };
+         }
+      }
+    }
+    return { type: "custom", time: "08:00", day: "1" };
+  };
+
+  const generateCron = (type: string, time: string, day: string) => {
+    const [hour, minute] = time.split(":");
+    if (type === "hourly") return `${parseInt(minute || '0')} * * * *`;
+    if (type === "daily") return `${parseInt(minute || '0')} ${parseInt(hour || '0')} * * *`;
+    if (type === "weekly") return `${parseInt(minute || '0')} ${parseInt(hour || '0')} * * ${day || '0'}`;
+    return "0 8 * * *";
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -49,6 +88,12 @@ export default function AutomationsPage() {
     setEditingRule(null);
     setFormData({ 
       name: "", 
+      type: "EVENT",
+      scheduleType: "daily",
+      scheduleTime: "08:00",
+      scheduleDay: "1",
+      scheduleCron: "",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       conditionMatch: "ALL",
       conditions: [{ feedKey: "", operator: "==", value: "" }],
       actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
@@ -59,8 +104,15 @@ export default function AutomationsPage() {
 
   const handleOpenEdit = (rule: any) => {
     setEditingRule(rule);
+    const parsed = parseCron(rule.scheduleCron);
     setFormData({
       name: rule.name,
+      type: rule.type || "EVENT",
+      scheduleType: parsed.type,
+      scheduleTime: parsed.time,
+      scheduleDay: parsed.day,
+      scheduleCron: rule.scheduleCron || "",
+      timezone: rule.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       conditionMatch: rule.conditionMatch || "ALL",
       conditions: rule.conditions?.length ? rule.conditions : [{ feedKey: "", operator: "==", value: "" }],
       actions: rule.actions?.length ? rule.actions : [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
@@ -75,9 +127,16 @@ export default function AutomationsPage() {
       const url = editingRule ? `/api/automations/${editingRule.id}` : "/api/automations";
       const method = editingRule ? "PATCH" : "POST";
 
+      const payload = {
+        ...formData,
+        scheduleCron: formData.type === "TIME" 
+          ? (formData.scheduleType === "custom" ? formData.scheduleCron : generateCron(formData.scheduleType, formData.scheduleTime, formData.scheduleDay))
+          : null
+      };
+
       const res = await fetch(url, {
         method,
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
@@ -192,17 +251,34 @@ export default function AutomationsPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">
-                  IF {rule.conditionMatch === "ALL" ? "ALL" : "ANY"} OF:
-                </div>
-                {rule.conditions?.map((cond: any, i: number) => (
-                  <div key={i} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
-                    <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">COND {i + 1}</span>
-                    <span className="font-bold text-archival-fg break-all">{cond.feedKey}</span>
-                    <span className="text-archival-accent">{cond.operator}</span>
-                    <span className="font-bold text-archival-fg">{cond.value}</span>
+                {rule.type === "TIME" && (
+                  <div className="flex flex-col gap-2 border border-archival-muted/50 p-4 rounded bg-archival-bg/30">
+                    <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">
+                      TIME SCHEDULE
+                    </div>
+                    <div className="flex items-center gap-4 font-mono text-[0.75rem] uppercase tracking-[0.1em] text-archival-fg">
+                      <Clock className="w-4 h-4 text-archival-accent" />
+                      <span>{rule.scheduleCron}</span>
+                      <span className="text-archival-muted-fg">({rule.timezone})</span>
+                    </div>
                   </div>
-                ))}
+                )}
+                
+                {rule.conditions?.length > 0 && (
+                  <>
+                    <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">
+                      IF {rule.conditionMatch === "ALL" ? "ALL" : "ANY"} OF:
+                    </div>
+                    {rule.conditions.map((cond: any, i: number) => (
+                      <div key={i} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
+                        <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">COND {i + 1}</span>
+                        <span className="font-bold text-archival-fg break-all">{cond.feedKey}</span>
+                        <span className="text-archival-accent">{cond.operator}</span>
+                        <span className="font-bold text-archival-fg">{cond.value}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
                 
                 <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase mt-4">
                   THEN:
@@ -248,17 +324,105 @@ export default function AutomationsPage() {
         title={editingRule ? "Modify Automation" : "New Automation Rule"}
       >
         <form onSubmit={handleSubmit} className="space-y-10">
-          <Input 
-            label="Rule Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g. Auto-Fan On High Temp"
-            required
-          />
+          <div className="grid grid-cols-2 gap-6">
+            <Input 
+              label="Rule Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g. Auto-Fan On High Temp"
+              required
+            />
+            <Select 
+              label="Rule Type"
+              value={formData.type}
+              onChange={(val) => setFormData({ ...formData, type: val })}
+              options={[
+                { value: "EVENT", label: "EVENT-BASED (SENSOR TRIGGER)" },
+                { value: "TIME", label: "TIME-BASED (CRON SCHEDULE)" }
+              ]}
+              required
+            />
+          </div>
 
           <div className="space-y-6 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
+            {formData.type === "TIME" && (
+              <>
+                <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">SCHEDULE (TIME-BASED)</div>
+                <div className="grid grid-cols-2 gap-6">
+                  <Select 
+                    label="Repeat"
+                    value={formData.scheduleType}
+                    onChange={(val) => setFormData({ ...formData, scheduleType: val })}
+                    options={[
+                      { value: "hourly", label: "EVERY HOUR" },
+                      { value: "daily", label: "EVERY DAY" },
+                      { value: "weekly", label: "EVERY WEEK" },
+                      { value: "custom", label: "CUSTOM CRON" }
+                    ]}
+                    required
+                  />
+                  <Input 
+                    label="Timezone"
+                    value={formData.timezone}
+                    onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                    placeholder="e.g. Asia/Jakarta"
+                    required={formData.type === "TIME"}
+                  />
+                </div>
+
+                {formData.scheduleType !== "custom" && (
+                  <div className="grid grid-cols-2 gap-6 mt-4">
+                    <Input 
+                      label="Time (24h)"
+                      type="time"
+                      value={formData.scheduleTime}
+                      onChange={(e) => setFormData({ ...formData, scheduleTime: e.target.value })}
+                      required={formData.type === "TIME"}
+                    />
+                    {formData.scheduleType === "weekly" && (
+                      <Select 
+                        label="Day of Week"
+                        value={formData.scheduleDay}
+                        onChange={(val) => setFormData({ ...formData, scheduleDay: val })}
+                        options={[
+                          { value: "0", label: "SUNDAY" },
+                          { value: "1", label: "MONDAY" },
+                          { value: "2", label: "TUESDAY" },
+                          { value: "3", label: "WEDNESDAY" },
+                          { value: "4", label: "THURSDAY" },
+                          { value: "5", label: "FRIDAY" },
+                          { value: "6", label: "SATURDAY" }
+                        ]}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {formData.scheduleType === "custom" && (
+                  <div className="mt-4">
+                    <Input 
+                      label="CRON Expression"
+                      value={formData.scheduleCron}
+                      onChange={(e) => setFormData({ ...formData, scheduleCron: e.target.value })}
+                      placeholder="e.g. 0 8 * * *"
+                      required={formData.type === "TIME" && formData.scheduleType === "custom"}
+                    />
+                    <div className="text-[0.75rem] font-sans text-archival-muted-fg mt-2">
+                      Cron format: <code className="bg-archival-bg px-1">minute hour day(month) month day(week)</code>.
+                    </div>
+                  </div>
+                )}
+                
+                <div className="text-[0.75rem] font-sans text-archival-muted-fg mt-2 mb-8">
+                  Your current local timezone is <code className="bg-archival-bg px-1">{Intl.DateTimeFormat().resolvedOptions().timeZone}</code>.
+                </div>
+              </>
+            )}
+
             <div className="flex justify-between items-center">
-              <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">CONDITIONS (TRIGGERS)</div>
+              <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">
+                {formData.type === "TIME" ? "CONDITIONS (OPTIONAL)" : "CONDITIONS (TRIGGERS)"}
+              </div>
               <Select 
                 label=""
                 value={formData.conditionMatch}
@@ -294,7 +458,7 @@ export default function AutomationsPage() {
                     setFormData({ ...formData, conditions: newConds });
                   }}
                   options={feedOptions}
-                  required
+                  required={formData.type !== "TIME"}
                 />
                 
                 <div className="grid grid-cols-2 gap-6">
@@ -314,7 +478,7 @@ export default function AutomationsPage() {
                       { value: ">=", label: "GREATER OR EQUAL (>=)" },
                       { value: "<=", label: "LESS OR EQUAL (<=)" }
                     ]}
-                    required
+                    required={formData.type !== "TIME" || cond.feedKey !== ""}
                   />
                   <Input 
                     label="Threshold Value"
@@ -325,7 +489,7 @@ export default function AutomationsPage() {
                       setFormData({ ...formData, conditions: newConds });
                     }}
                     placeholder="e.g. 30"
-                    required
+                    required={formData.type !== "TIME" || cond.feedKey !== ""}
                   />
                 </div>
               </div>
