@@ -47,14 +47,20 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
    cd iot-archival-dashboard
    ```
 
-2. **Run with Docker Compose**:
+2. **Configure Environment Variables**:
+   Copy the example environment file and fill in your Cloudflare Tunnel Token (if using the tunnel):
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Run with Docker Compose**:
    ```bash
    docker compose up -d --build
    ```
 
-3. **Access the dashboard**: Open [http://localhost:3010](http://localhost:3010) in your browser. Register an initial admin account on the login screen to access the archive.
+4. **Access the dashboard**: Open [http://localhost:3010](http://localhost:3010) in your browser. Register an initial admin account on the login screen to access the archive.
 
-4. **Configure Credentials**: Navigate to **System Configuration** within the dashboard to set your Adafruit IO Username and Key securely. No `.env` file is required.
+5. **Configure Credentials**: Navigate to **System Configuration** within the dashboard to set your Adafruit IO Username and Key securely.
 
 ## Tech Stack
 
