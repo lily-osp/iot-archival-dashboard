@@ -41,7 +41,7 @@ export function MuseumLabel({
   value?: string | number; 
   unit?: string;
   className?: string;
-  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump";
+  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button";
   onControlChange?: (value: string) => void;
   onHeaderClick?: () => void;
   history?: any[];
@@ -52,6 +52,7 @@ export function MuseumLabel({
   })).reverse();
 
   const [localSliderValue, setLocalSliderValue] = useState<string | null>(null);
+  const [isPressing, setIsPressing] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -126,6 +127,27 @@ export function MuseumLabel({
               checked={value === "1" || value === "ON" || value === "true"} 
               onChange={(checked) => onControlChange?.(checked ? "1" : "0")}
             />
+          </div>
+        )}
+
+        {type === "button" && (
+          <div className="flex flex-col gap-4">
+            <button
+              onMouseDown={() => { setIsPressing(true); onControlChange?.("1"); }}
+              onMouseUp={() => setIsPressing(false)}
+              onMouseLeave={() => setIsPressing(false)}
+              className={cn(
+                "w-full py-8 rounded-[6px] border-2 font-mono text-[1rem] font-bold uppercase tracking-[0.2em] transition-all duration-[75ms] active:scale-[0.98] cursor-pointer",
+                isPressing 
+                  ? "bg-archival-accent text-white border-archival-accent shadow-inner translate-y-[2px]" 
+                  : "bg-archival-surface text-archival-fg border-archival-fg hover:bg-archival-fg hover:text-archival-surface"
+              )}
+            >
+              {isPressing ? "SIGNAL_SENT" : "EXECUTE_TRIGGER"}
+            </button>
+            <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase tracking-[0.1em] text-center">
+              MOMENTARY_CONTACT_SYSTEM
+            </div>
           </div>
         )}
 

@@ -223,8 +223,8 @@ export default function Home() {
                 { value: "text", label: "TEXT_LOG (READ)" },
                 { value: "indicator", label: "INDICATOR (STATUS)" },
                 { value: "switch", label: "SWITCH (TOGGLE)" },
-                { value: "slider", label: "SLIDER (RANGE)" },
-                { value: "dump", label: "DATA_DUMP (WRITE)" },
+                { value: "button", label: "BUTTON (TRIGGER)" },
+                { value: "slider", label: "SLIDER (RANGE)" },                { value: "dump", label: "DATA_DUMP (WRITE)" },
               ]}
               required
             />
@@ -364,7 +364,10 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
   }, [widget.feedKey, widget.type]);
 
   const handleControlChange = async (newValue: string) => {
-    setValue(newValue); 
+    if (widget.type !== "button") {
+      setValue(newValue); 
+    }
+    
     try {
       const res = await fetch(`/api/feeds/${widget.feedKey}/send`, {
         method: "POST",
@@ -372,6 +375,16 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
       });
       if (res.ok) {
         toast.info(`CONTROL_SIGNAL_SENT: ${newValue}`);
+        
+        // If it's a button, send a '0' after a short delay to reset the pulse
+        if (widget.type === "button") {
+          setTimeout(async () => {
+            await fetch(`/api/feeds/${widget.feedKey}/send`, {
+              method: "POST",
+              body: JSON.stringify({ value: "0" })
+            });
+          }, 200);
+        }
       } else {
         toast.error("SIGNAL_TRANSMISSION_FAILED");
       }
