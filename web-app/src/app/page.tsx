@@ -337,10 +337,7 @@ export default function Home() {
         cancelText="ABORT_EXPUNGE"
       />
 
-      <footer className="mt-auto pt-12 border-t border-archival-muted/50 flex flex-col md:flex-row justify-between items-center gap-8 opacity-60 hover:opacity-100 transition-opacity duration-[225ms]">
-        <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] uppercase text-archival-muted-fg">
-          [ SWISS_ARCHIVAL_IOT_SPECIMEN_PROTOTYPE_2026 ]
-        </div>
+      <footer className="mt-auto pt-12 border-t border-archival-muted/50 flex flex-col md:flex-row justify-end items-center gap-8 opacity-60 hover:opacity-100 transition-opacity duration-[225ms]">
         <div className="flex gap-8 items-center">
           <Link href="/docs" className="flex items-center gap-2 group text-archival-muted-fg hover:text-archival-accent transition-colors duration-[150ms]">
             <span className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] uppercase">DOCUMENTATION</span>

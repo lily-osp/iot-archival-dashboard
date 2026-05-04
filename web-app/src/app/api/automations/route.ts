@@ -9,6 +9,10 @@ export async function GET() {
 
   try {
     const automations = await prisma.automation.findMany({
+      include: { 
+        conditions: true,
+        actions: { orderBy: { order: 'asc' } }
+      },
       orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json(automations);
@@ -24,23 +28,40 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
 
-    // Ensure condition and action feeds exist on Adafruit IO
-    if (data.conditionFeedKey) {
-      try { await ensureFeed(data.conditionFeedKey); } catch (e) {}
-    }
-    if (data.actionFeedKey) {
-      try { await ensureFeed(data.actionFeedKey); } catch (e) {}
+    // Ensure condition feeds exist
+    if (data.conditions) {
+      for (const cond of data.conditions) {
+        if (cond.feedKey) {
+          try { await ensureFeed(cond.feedKey); } catch (e) {}
+        }
+      }
     }
 
     const automation = await prisma.automation.create({
       data: {
         name: data.name,
-        conditionFeedKey: data.conditionFeedKey,
-        conditionOperator: data.conditionOperator,
-        conditionValue: data.conditionValue,
-        actionFeedKey: data.actionFeedKey,
-        actionValue: data.actionValue,
-        isActive: data.isActive !== undefined ? data.isActive : true
+        conditionMatch: data.conditionMatch || "ALL",
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        conditions: {
+          create: (data.conditions || []).map((c: any) => ({
+            feedKey: c.feedKey,
+            operator: c.operator,
+            value: c.value
+          }))
+        },
+        actions: {
+          create: (data.actions || []).map((a: any, index: number) => ({
+            type: a.type || "publish",
+            feedKey: a.feedKey || null,
+            value: a.value || null,
+            delayMs: a.delayMs ? parseInt(a.delayMs) : 0,
+            order: index
+          }))
+        }
+      },
+      include: { 
+        conditions: true,
+        actions: { orderBy: { order: 'asc' } }
       }
     });
     return NextResponse.json(automation);

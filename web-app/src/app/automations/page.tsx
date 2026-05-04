@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Shell, Button, Modal, Input, Select, Switch, ConfirmationModal, toast, cn } from "@/components/ui/archival";
-import { Plus, Settings, RefreshCcw, ArrowLeft, Trash2, Activity, Play, Pause, Zap } from "lucide-react";
+import { Plus, RefreshCcw, ArrowLeft, Trash2, Activity, Zap, X, Clock } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function AutomationsPage() {
   const [automations, setAutomations] = useState<any[]>([]);
@@ -18,11 +17,9 @@ export default function AutomationsPage() {
   // Form State
   const [formData, setFormData] = useState({
     name: "",
-    conditionFeedKey: "",
-    conditionOperator: "==",
-    conditionValue: "",
-    actionFeedKey: "",
-    actionValue: "",
+    conditionMatch: "ALL",
+    conditions: [{ feedKey: "", operator: "==", value: "" }],
+    actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
     isActive: true
   });
 
@@ -52,11 +49,9 @@ export default function AutomationsPage() {
     setEditingRule(null);
     setFormData({ 
       name: "", 
-      conditionFeedKey: "", 
-      conditionOperator: "==", 
-      conditionValue: "", 
-      actionFeedKey: "", 
-      actionValue: "",
+      conditionMatch: "ALL",
+      conditions: [{ feedKey: "", operator: "==", value: "" }],
+      actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
       isActive: true 
     });
     setIsModalOpen(true);
@@ -66,11 +61,9 @@ export default function AutomationsPage() {
     setEditingRule(rule);
     setFormData({
       name: rule.name,
-      conditionFeedKey: rule.conditionFeedKey,
-      conditionOperator: rule.conditionOperator,
-      conditionValue: rule.conditionValue,
-      actionFeedKey: rule.actionFeedKey,
-      actionValue: rule.actionValue,
+      conditionMatch: rule.conditionMatch || "ALL",
+      conditions: rule.conditions?.length ? rule.conditions : [{ feedKey: "", operator: "==", value: "" }],
+      actions: rule.actions?.length ? rule.actions : [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
       isActive: rule.isActive
     });
     setIsModalOpen(true);
@@ -155,7 +148,7 @@ export default function AutomationsPage() {
           Automations<br />Protocol
         </h1>
         <div className="absolute top-0 right-0 p-4 opacity-5 font-mono text-[10px] tracking-widest uppercase pointer-events-none">
-          LOGIC_MODULE_V1
+          LOGIC_MODULE_V2
         </div>
         
         <div className="flex gap-4 mt-8">
@@ -199,19 +192,40 @@ export default function AutomationsPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center gap-4 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
-                  <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">IF</span>
-                  <span className="font-bold text-archival-fg break-all">{rule.conditionFeedKey}</span>
-                  <span className="text-archival-accent">{rule.conditionOperator}</span>
-                  <span className="font-bold text-archival-fg">{rule.conditionValue}</span>
+                <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">
+                  IF {rule.conditionMatch === "ALL" ? "ALL" : "ANY"} OF:
                 </div>
-                <div className="flex items-center gap-4 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
-                  <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">THEN</span>
-                  <span>SET</span>
-                  <span className="font-bold text-archival-fg break-all">{rule.actionFeedKey}</span>
-                  <span>TO</span>
-                  <span className="font-bold text-archival-fg">{rule.actionValue}</span>
+                {rule.conditions?.map((cond: any, i: number) => (
+                  <div key={i} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
+                    <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">COND {i + 1}</span>
+                    <span className="font-bold text-archival-fg break-all">{cond.feedKey}</span>
+                    <span className="text-archival-accent">{cond.operator}</span>
+                    <span className="font-bold text-archival-fg">{cond.value}</span>
+                  </div>
+                ))}
+                
+                <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase mt-4">
+                  THEN:
                 </div>
+                {rule.actions?.map((act: any, i: number) => (
+                  <div key={i} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
+                    <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">STEP {i + 1}</span>
+                    {act.type === "delay" ? (
+                      <>
+                        <Clock className="w-3 h-3 text-archival-accent" />
+                        <span>WAIT</span>
+                        <span className="font-bold text-archival-fg">{act.delayMs}ms</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>SET</span>
+                        <span className="font-bold text-archival-fg break-all">{act.feedKey}</span>
+                        <span>TO</span>
+                        <span className="font-bold text-archival-fg">{act.value}</span>
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           ))
@@ -243,59 +257,184 @@ export default function AutomationsPage() {
           />
 
           <div className="space-y-6 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
-            <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">CONDITION (TRIGGER)</div>
-            
-            <Select 
-              label="Listen to Feed"
-              value={formData.conditionFeedKey}
-              onChange={(val) => setFormData({ ...formData, conditionFeedKey: val })}
-              options={feedOptions}
-              required
-            />
-            
-            <div className="grid grid-cols-2 gap-6">
+            <div className="flex justify-between items-center">
+              <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">CONDITIONS (TRIGGERS)</div>
               <Select 
-                label="Operator"
-                value={formData.conditionOperator}
-                onChange={(val) => setFormData({ ...formData, conditionOperator: val })}
+                label=""
+                value={formData.conditionMatch}
+                onChange={(val) => setFormData({ ...formData, conditionMatch: val })}
                 options={[
-                  { value: "==", label: "EQUALS (==)" },
-                  { value: "!=", label: "NOT EQUALS (!=)" },
-                  { value: ">", label: "GREATER THAN (>)" },
-                  { value: "<", label: "LESS THAN (<)" },
-                  { value: ">=", label: "GREATER OR EQUAL (>=)" },
-                  { value: "<=", label: "LESS OR EQUAL (<=)" }
+                  { value: "ALL", label: "MATCH ALL" },
+                  { value: "ANY", label: "MATCH ANY" }
                 ]}
-                required
-              />
-              <Input 
-                label="Threshold Value"
-                value={formData.conditionValue}
-                onChange={(e) => setFormData({ ...formData, conditionValue: e.target.value })}
-                placeholder="e.g. 30"
-                required
               />
             </div>
+            
+            {formData.conditions.map((cond, index) => (
+              <div key={index} className="p-4 border border-archival-muted/30 bg-archival-surface rounded relative space-y-4">
+                <div className="absolute top-2 right-2">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const newConds = [...formData.conditions];
+                      newConds.splice(index, 1);
+                      setFormData({ ...formData, conditions: newConds });
+                    }}
+                    className="text-archival-muted-fg hover:text-archival-accent"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <Select 
+                  label="Listen to Feed"
+                  value={cond.feedKey}
+                  onChange={(val) => {
+                    const newConds = [...formData.conditions];
+                    newConds[index].feedKey = val;
+                    setFormData({ ...formData, conditions: newConds });
+                  }}
+                  options={feedOptions}
+                  required
+                />
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <Select 
+                    label="Operator"
+                    value={cond.operator}
+                    onChange={(val) => {
+                      const newConds = [...formData.conditions];
+                      newConds[index].operator = val;
+                      setFormData({ ...formData, conditions: newConds });
+                    }}
+                    options={[
+                      { value: "==", label: "EQUALS (==)" },
+                      { value: "!=", label: "NOT EQUALS (!=)" },
+                      { value: ">", label: "GREATER THAN (>)" },
+                      { value: "<", label: "LESS THAN (<)" },
+                      { value: ">=", label: "GREATER OR EQUAL (>=)" },
+                      { value: "<=", label: "LESS OR EQUAL (<=)" }
+                    ]}
+                    required
+                  />
+                  <Input 
+                    label="Threshold Value"
+                    value={cond.value}
+                    onChange={(e) => {
+                      const newConds = [...formData.conditions];
+                      newConds[index].value = e.target.value;
+                      setFormData({ ...formData, conditions: newConds });
+                    }}
+                    placeholder="e.g. 30"
+                    required
+                  />
+                </div>
+              </div>
+            ))}
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => {
+                setFormData({ 
+                  ...formData, 
+                  conditions: [...formData.conditions, { feedKey: "", operator: "==", value: "" }] 
+                });
+              }}
+              className="w-full border-dashed"
+            >
+              <Plus className="w-4 h-4 mr-2" /> ADD CONDITION
+            </Button>
           </div>
 
           <div className="space-y-6 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
-            <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">ACTION (RESULT)</div>
+            <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">ACTIONS (RESULTS)</div>
             
-            <Select 
-              label="Target Feed"
-              value={formData.actionFeedKey}
-              onChange={(val) => setFormData({ ...formData, actionFeedKey: val })}
-              options={feedOptions}
-              required
-            />
+            {formData.actions.map((act, index) => (
+              <div key={index} className="p-4 border border-archival-muted/30 bg-archival-surface rounded relative space-y-4">
+                <div className="absolute top-2 right-2">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const newActs = [...formData.actions];
+                      newActs.splice(index, 1);
+                      setFormData({ ...formData, actions: newActs });
+                    }}
+                    className="text-archival-muted-fg hover:text-archival-accent"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                <Select 
+                  label="Action Type"
+                  value={act.type}
+                  onChange={(val) => {
+                    const newActs = [...formData.actions];
+                    newActs[index].type = val;
+                    setFormData({ ...formData, actions: newActs });
+                  }}
+                  options={[
+                    { value: "publish", label: "PUBLISH TO FEED" },
+                    { value: "delay", label: "WAIT (DELAY)" }
+                  ]}
+                  required
+                />
+
+                {act.type === "publish" ? (
+                  <>
+                    <Select 
+                      label="Target Feed"
+                      value={act.feedKey}
+                      onChange={(val) => {
+                        const newActs = [...formData.actions];
+                        newActs[index].feedKey = val;
+                        setFormData({ ...formData, actions: newActs });
+                      }}
+                      options={feedOptions}
+                      required
+                    />
+                    
+                    <Input 
+                      label="Set Payload To"
+                      value={act.value}
+                      onChange={(e) => {
+                        const newActs = [...formData.actions];
+                        newActs[index].value = e.target.value;
+                        setFormData({ ...formData, actions: newActs });
+                      }}
+                      placeholder="e.g. ON or 1"
+                      required
+                    />
+                  </>
+                ) : (
+                  <Input 
+                    label="Delay in Milliseconds"
+                    type="number"
+                    value={act.delayMs.toString()}
+                    onChange={(e) => {
+                      const newActs = [...formData.actions];
+                      newActs[index].delayMs = parseInt(e.target.value) || 0;
+                      setFormData({ ...formData, actions: newActs });
+                    }}
+                    placeholder="e.g. 5000"
+                    required
+                  />
+                )}
+              </div>
+            ))}
             
-            <Input 
-              label="Set Payload To"
-              value={formData.actionValue}
-              onChange={(e) => setFormData({ ...formData, actionValue: e.target.value })}
-              placeholder="e.g. ON or 1"
-              required
-            />
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => {
+                setFormData({ 
+                  ...formData, 
+                  actions: [...formData.actions, { type: "publish", feedKey: "", value: "", delayMs: 0 }] 
+                });
+              }}
+              className="w-full border-dashed"
+            >
+              <Plus className="w-4 h-4 mr-2" /> ADD ACTION
+            </Button>
           </div>
 
           <div className="flex items-center justify-between p-4 border border-archival-muted/50 rounded-[6px]">

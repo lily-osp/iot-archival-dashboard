@@ -54,37 +54,64 @@ export async function getMqttClient() {
 
         try {
           const automations = await prisma.automation.findMany({
-            where: { conditionFeedKey: feedKey, isActive: true }
+            where: { 
+              isActive: true,
+              conditions: { some: { feedKey: feedKey } }
+            },
+            include: { 
+              conditions: true,
+              actions: { orderBy: { order: 'asc' } }
+            }
           });
           
           for (const rule of automations) {
-            let triggered = false;
-            const msgVal = parseFloat(value);
-            const condVal = parseFloat(rule.conditionValue);
-            
-            if (!isNaN(msgVal) && !isNaN(condVal)) {
-              switch (rule.conditionOperator) {
-                case '>': triggered = msgVal > condVal; break;
-                case '<': triggered = msgVal < condVal; break;
-                case '>=': triggered = msgVal >= condVal; break;
-                case '<=': triggered = msgVal <= condVal; break;
-                case '==': triggered = msgVal === condVal; break;
-                case '!=': triggered = msgVal !== condVal; break;
+            let conditionsMet = 0;
+            for (const cond of rule.conditions) {
+              const currentValStr = cond.feedKey === feedKey ? value : await redis.get(`last:${cond.feedKey}`);
+              if (currentValStr === null) continue;
+              
+              let triggered = false;
+              const msgVal = parseFloat(currentValStr);
+              const condVal = parseFloat(cond.value);
+              
+              if (!isNaN(msgVal) && !isNaN(condVal)) {
+                switch (cond.operator) {
+                  case '>': triggered = msgVal > condVal; break;
+                  case '<': triggered = msgVal < condVal; break;
+                  case '>=': triggered = msgVal >= condVal; break;
+                  case '<=': triggered = msgVal <= condVal; break;
+                  case '==': triggered = msgVal === condVal; break;
+                  case '!=': triggered = msgVal !== condVal; break;
+                }
+              } else {
+                switch (cond.operator) {
+                  case '==': triggered = currentValStr === cond.value; break;
+                  case '!=': triggered = currentValStr !== cond.value; break;
+                }
               }
-            } else {
-              switch (rule.conditionOperator) {
-                case '==': triggered = value === rule.conditionValue; break;
-                case '!=': triggered = value !== rule.conditionValue; break;
-              }
+              if (triggered) conditionsMet++;
             }
 
-            if (triggered) {
-              console.log(`System Archive: Rule [${rule.name}] triggered by ${feedKey} = ${value}. executing Action: ${rule.actionFeedKey} -> ${rule.actionValue}`);
-              if (rule.actionFeedKey !== rule.conditionFeedKey) {
-                 const { sendFeedData } = await import("./adafruit");
-                 await sendFeedData(rule.actionFeedKey, rule.actionValue).catch(e => {
-                   console.error(`System Archive: Automation Action Failed:`, e.message);
-                 });
+            const isTriggered = rule.conditionMatch === "ANY" 
+              ? conditionsMet > 0 
+              : conditionsMet === rule.conditions.length;
+
+            if (isTriggered && rule.conditions.length > 0) {
+              console.log(`System Archive: Rule [${rule.name}] triggered. Executing ${rule.actions.length} actions.`);
+              
+              for (const action of rule.actions) {
+                if (action.type === "delay") {
+                  console.log(`System Archive: Delaying for ${action.delayMs}ms`);
+                  await new Promise(resolve => setTimeout(resolve, action.delayMs || 0));
+                } else if (action.type === "publish" && action.feedKey) {
+                  if (action.feedKey !== feedKey) {
+                    const { sendFeedData } = await import("./adafruit");
+                    console.log(`System Archive: Action Execution: ${action.feedKey} -> ${action.value}`);
+                    await sendFeedData(action.feedKey, action.value!).catch(e => {
+                      console.error(`System Archive: Automation Action [${action.feedKey}] Failed:`, e.message);
+                    });
+                  }
+                }
               }
             }
           }

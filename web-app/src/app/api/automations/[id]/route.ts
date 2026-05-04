@@ -14,26 +14,71 @@ export async function PATCH(
   try {
     const data = await request.json();
 
-    // Ensure condition and action feeds exist on Adafruit IO
-    if (data.conditionFeedKey) {
-      try { await ensureFeed(data.conditionFeedKey); } catch (e) {}
-    }
-    if (data.actionFeedKey) {
-      try { await ensureFeed(data.actionFeedKey); } catch (e) {}
+    // Ensure condition feeds exist
+    if (data.conditions) {
+      for (const cond of data.conditions) {
+        if (cond.feedKey) {
+          try { await ensureFeed(cond.feedKey); } catch (e) {}
+        }
+      }
     }
 
-    const automation = await prisma.automation.update({
-      where: { id },
-      data: {
-        name: data.name,
-        conditionFeedKey: data.conditionFeedKey,
-        conditionOperator: data.conditionOperator,
-        conditionValue: data.conditionValue,
-        actionFeedKey: data.actionFeedKey,
-        actionValue: data.actionValue,
-        isActive: data.isActive
+    // Use a transaction to update the automation and its actions/conditions
+    const automation = await prisma.$transaction(async (tx) => {
+      // 1. Update basic fields
+      const updated = await tx.automation.update({
+        where: { id },
+        data: {
+          name: data.name,
+          conditionMatch: data.conditionMatch || "ALL",
+          isActive: data.isActive
+        }
+      });
+
+      // 2. Delete existing conditions and actions
+      if (data.conditions) {
+        await tx.automationCondition.deleteMany({
+          where: { automationId: id }
+        });
+        if (data.conditions.length > 0) {
+          await tx.automationCondition.createMany({
+            data: data.conditions.map((c: any) => ({
+              automationId: id,
+              feedKey: c.feedKey,
+              operator: c.operator,
+              value: c.value
+            }))
+          });
+        }
       }
+
+      if (data.actions) {
+        await tx.automationAction.deleteMany({
+          where: { automationId: id }
+        });
+        if (data.actions.length > 0) {
+          await tx.automationAction.createMany({
+            data: data.actions.map((a: any, index: number) => ({
+              automationId: id,
+              type: a.type || "publish",
+              feedKey: a.feedKey || null,
+              value: a.value || null,
+              delayMs: a.delayMs ? parseInt(a.delayMs) : 0,
+              order: index
+            }))
+          });
+        }
+      }
+
+      return tx.automation.findUnique({
+        where: { id },
+        include: { 
+          conditions: true,
+          actions: { orderBy: { order: 'asc' } }
+        }
+      });
     });
+
     return NextResponse.json(automation);
   } catch (error) {
     console.error("Automation update error:", error);

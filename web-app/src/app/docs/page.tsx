@@ -115,24 +115,24 @@ export default function DocsPage() {
           <section id="logic-matrix" className="scroll-mt-12">
             <div className="flex items-center gap-4 mb-6">
               <Activity className="w-6 h-6 text-archival-accent" />
-              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">Logic Matrix</h2>
+              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">Logic Matrix (Advanced Automations)</h2>
             </div>
             <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
               <p className="mb-6">
-                The <span className="font-semibold text-archival-accent uppercase tracking-wider">Logic Matrix</span> is the local automation engine. It allows for ultra-low latency response rules that execute on the dashboard server instead of relying on external cloud triggers.
+                The <span className="font-semibold text-archival-accent uppercase tracking-wider">Logic Matrix</span> is the local automation engine. It handles complex pipelines, including 1-to-1, 1-to-many, and many-to-many logic.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
-                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">1. LISTEN</div>
-                  <p className="text-[0.75rem]">Subscribes to all MQTT streams across the archive.</p>
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">1. LISTEN & MATCH</div>
+                  <p className="text-[0.75rem]">Subscribes to multiple feeds. Combine conditions using "MATCH ALL" or "MATCH ANY" operators.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">2. EVALUATE</div>
-                  <p className="text-[0.75rem]">Performs mathematical (&gt;, &lt;, ==) or string comparisons locally.</p>
+                  <p className="text-[0.75rem]">Performs mathematical (&gt;, &lt;, ==) or string comparisons locally with zero reliance on cloud computing.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
-                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. TRIGGER</div>
-                  <p className="text-[0.75rem]">Instantly dispatches actions to physical actuators.</p>
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. SEQUENTIAL TRIGGER</div>
+                  <p className="text-[0.75rem]">Dispatches an array of actions. Actions can either publish a new payload or wait via configured delays.</p>
                 </div>
               </div>
             </div>

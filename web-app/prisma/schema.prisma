@@ -55,14 +55,32 @@ model FeedConfig {
 }
 
 model Automation {
-  id                String   @id @default(cuid())
+  id                String             @id @default(cuid())
   name              String
-  conditionFeedKey  String
-  conditionOperator String   // '>', '<', '==', '!=', '>=', '<='
-  conditionValue    String
-  actionFeedKey     String
-  actionValue       String
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  conditionMatch    String             @default("ALL")
+  conditions        AutomationCondition[]
+  actions           AutomationAction[]
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model AutomationCondition {
+  id           String     @id @default(cuid())
+  feedKey      String
+  operator     String
+  value        String
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automationId String
+}
+
+model AutomationAction {
+  id           String     @id @default(cuid())
+  type         String     @default("publish") // "publish" or "delay"
+  feedKey      String?
+  value        String?
+  delayMs      Int?       @default(0)
+  order        Int        @default(0)
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automationId String
 }
