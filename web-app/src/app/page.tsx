@@ -22,8 +22,10 @@ export default function Home() {
   const [formData, setFormData] = useState({
     label: "",
     feedKey: "",
-    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator",
-    unit: ""
+    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text",
+    unit: "",
+    min: "0",
+    max: "255"
   });
   const [isManualFeed, setIsManualFeed] = useState(false);
 
@@ -56,7 +58,7 @@ export default function Home() {
 
   const handleOpenCreate = () => {
     setEditingWidget(null);
-    setFormData({ label: "", feedKey: "", type: "monitor", unit: "" });
+    setFormData({ label: "", feedKey: "", type: "monitor", unit: "", min: "0", max: "255" });
     setIsManualFeed(false);
     setIsModalOpen(true);
   };
@@ -69,7 +71,9 @@ export default function Home() {
       label: widget.label,
       feedKey: widget.feedKey,
       type: widget.type as any,
-      unit: settings.unit || ""
+      unit: settings.unit || "",
+      min: settings.min?.toString() || "0",
+      max: settings.max?.toString() || "255"
     });
     setIsModalOpen(true);
   };
@@ -80,7 +84,11 @@ export default function Home() {
     const payload = {
       ...formData,
       feedName: feed?.name || formData.label,
-      settings: { unit: formData.unit }
+      settings: { 
+        unit: formData.unit,
+        min: parseFloat(formData.min || "0"),
+        max: parseFloat(formData.max || "255")
+      }
     };
 
     try {
@@ -235,6 +243,30 @@ export default function Home() {
               placeholder="e.g. °C, %, W"
             />
           </div>
+
+          {formData.type === "slider" && (
+            <div className="grid grid-cols-2 gap-10 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
+              <Input 
+                label="Low Threshold (Min)"
+                type="number"
+                value={formData.min}
+                onChange={(e) => setFormData({ ...formData, min: e.target.value })}
+                placeholder="0"
+                required
+              />
+              <Input 
+                label="High Threshold (Max)"
+                type="number"
+                value={formData.max}
+                onChange={(e) => setFormData({ ...formData, max: e.target.value })}
+                placeholder="255"
+                required
+              />
+              <div className="col-span-2 text-[0.625rem] font-mono text-archival-muted-fg uppercase tracking-[0.1em]">
+                SLIDER_RANGE_SPECIFICATION
+              </div>
+            </div>
+          )}
 
           <div className="space-y-6">
             <Select 
@@ -398,6 +430,8 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
       label={widget.label} 
       value={value ?? undefined} 
       unit={settings.unit}
+      min={settings.min}
+      max={settings.max}
       type={widget.type as any}
       onControlChange={handleControlChange}
       onHeaderClick={onEdit}

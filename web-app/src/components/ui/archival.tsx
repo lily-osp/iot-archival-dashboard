@@ -31,6 +31,8 @@ export function MuseumLabel({
   label, 
   value, 
   unit, 
+  min = 0,
+  max = 255,
   className,
   type = "monitor",
   onControlChange,
@@ -40,6 +42,8 @@ export function MuseumLabel({
   label: string; 
   value?: string | number; 
   unit?: string;
+  min?: number;
+  max?: number;
   className?: string;
   type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button";
   onControlChange?: (value: string) => void;
@@ -154,14 +158,14 @@ export function MuseumLabel({
         {type === "slider" && (
           <div className="space-y-4 p-4 rounded-[6px] border border-archival-muted/50 bg-archival-bg/50">
             <div className="flex justify-between items-end">
-              <span className="text-[2.25rem] font-bold font-sans tracking-[-0.03em] leading-[1.1] text-archival-fg">{localSliderValue ?? value ?? 0}</span>
+              <span className="text-[2.25rem] font-bold font-sans tracking-[-0.03em] leading-[1.1] text-archival-fg">{localSliderValue ?? value ?? min}</span>
               <span className="text-[0.625rem] font-mono font-semibold text-archival-muted-fg tracking-[0.1em] uppercase">{unit}</span>
             </div>
             <input 
               type="range" 
-              min="0" 
-              max="255" 
-              value={parseInt(localSliderValue || value as string || "0")} 
+              min={min} 
+              max={max} 
+              value={parseFloat(localSliderValue || value as string || min.toString())} 
               onChange={(e) => {
                 const val = e.target.value;
                 setLocalSliderValue(val);
