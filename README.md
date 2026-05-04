@@ -1,6 +1,10 @@
 # IoT Archival Dashboard
 
+![Feed Dashboard](images/feed_dashboard.png)
+
 A Swiss Archival-styled IoT dashboard designed as an elegant, robust, and highly functional interface for Adafruit IO. It features real-time updates, historical data tracking, and a powerful local automation engine.
+
+![Automation Logic Matrix](images/automation.png)
 
 ## Overview
 
