@@ -68,7 +68,7 @@ export function MuseumLabel({
   return (
     <div className={cn(
       "border border-archival-muted p-6 bg-archival-surface rounded-[6px] animate-entrance relative group transition-all duration-[225ms] ease-[cubic-bezier(0.65,0,0.35,1)] hover:border-archival-accent hover:-translate-y-[2px] flex flex-col", 
-      type === "chart" || type === "dump" || type === "stream" ? "col-span-1 md:col-span-2 row-span-1 min-h-[350px]" : "h-full min-h-[220px]",
+      type === "chart" || type === "dump" || type === "stream" ? "col-span-1 md:col-span-2 row-span-1 h-[350px]" : "h-full min-h-[220px]",
       className
     )}>
       {/* Component Header Metadata */}
@@ -93,7 +93,7 @@ export function MuseumLabel({
         </button>
       </div>
       
-      <div className="flex-1 flex flex-col justify-center">
+      <div className="flex-1 flex flex-col justify-center min-h-0">
         {type === "monitor" && (
           <div className="flex items-baseline gap-3">
             <span className="text-[3rem] font-bold font-sans tracking-[-0.03em] leading-[1.05] text-archival-fg">
