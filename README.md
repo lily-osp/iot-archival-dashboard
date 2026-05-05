@@ -50,6 +50,7 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
 - **SWITCH (TOGGLE)**: Boolean control gate (ON/OFF).
 - **BUTTON (TRIGGER)**: Momentary pulse trigger (sends '1', auto-resets to '0').
 - **SLIDER (RANGE)**: Analog control surface with custom low/high thresholds.
+- **COLOR_PICKER (COLOR)**: Hexadecimal color selection gate (e.g. `#FF0000`).
 - **DATA_DUMP (WRITE)**: Unlimited capacity buffer for manual configuration payload transmission.
 
 ## Quick Start with Docker

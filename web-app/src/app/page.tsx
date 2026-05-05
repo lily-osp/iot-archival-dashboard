@@ -23,7 +23,7 @@ export default function Home() {
   const [formData, setFormData] = useState({
     label: "",
     feedKey: "",
-    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream",
+    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream" | "color",
     unit: "",
     min: "0",
     max: "255",
@@ -242,6 +242,7 @@ export default function Home() {
                 { value: "gauge", label: "GAUGE (DIAL)" },
                 { value: "stream", label: "STREAM (DATA_LOGS)" },
                 { value: "dump", label: "DATA_DUMP (WRITE)" },
+                { value: "color", label: "COLOR_PICKER (COLOR)" },
               ]}
               required
             />

@@ -130,6 +130,7 @@ export default function DocsPage() {
                 { name: "SLIDER (RANGE)", desc: "Analog control surface. Supports custom Low/High thresholds (e.g. 0-100% or -10 to 50°C)." },
                 { name: "GAUGE (DIAL)", desc: "Semi-circular analog dial indicating a value's position between a configured minimum and maximum threshold." },
                 { name: "STREAM (DATA_LOGS)", desc: "A live, scrolling terminal-like stream of historical and incoming string or numeric data events." },
+                { name: "COLOR_PICKER (COLOR)", desc: "Hexadecimal color selection gate. Sends hex color codes to the attached feed." },
                 { name: "DATA_DUMP (WRITE)", desc: "Unlimited capacity buffer for sending large string configurations or manual logs." }
               ].map((type) => (
                 <div key={type.name} className="p-6 border border-archival-muted rounded-[6px] bg-archival-surface">

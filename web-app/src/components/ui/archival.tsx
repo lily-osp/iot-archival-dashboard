@@ -45,7 +45,7 @@ export function MuseumLabel({
   min?: number;
   max?: number;
   className?: string;
-  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button" | "gauge" | "stream";
+  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button" | "gauge" | "stream" | "color";
   onControlChange?: (value: string) => void;
   onHeaderClick?: () => void;
   history?: any[];
@@ -272,6 +272,30 @@ export function MuseumLabel({
                   NO_DATA_STREAM_FOUND
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {type === "color" && (
+          <div className="flex items-center gap-4 p-4 rounded-[6px] border border-archival-muted/50 bg-archival-bg/50">
+            <div className="flex-1 space-y-1">
+              <span className="text-[0.75rem] font-mono font-semibold text-archival-muted-fg tracking-[0.1em] uppercase">COLOR_GATE</span>
+              <div className="text-[0.625rem] font-mono text-archival-fg font-bold uppercase tracking-[0.1em]">{value ?? "#FFFFFF"}</div>
+            </div>
+            <div className="relative w-12 h-12 rounded-[6px] overflow-hidden border border-archival-muted shadow-sm">
+              <input 
+                type="color" 
+                value={value && typeof value === 'string' && value.startsWith('#') ? value : "#FFFFFF"}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // Immediately update UI optimisticly if possible, but we don't have local setValue here directly for color without onControlChange
+                  if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+                  debounceTimerRef.current = setTimeout(() => {
+                    onControlChange?.(val);
+                  }, 500);
+                }}
+                className="absolute inset-[-10px] w-[200%] h-[200%] p-0 border-0 cursor-pointer bg-transparent"
+              />
             </div>
           </div>
         )}
