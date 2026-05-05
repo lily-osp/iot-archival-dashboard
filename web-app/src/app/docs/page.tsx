@@ -37,9 +37,11 @@ export default function DocsPage() {
               <li><a href="#concept" className="hover:text-archival-accent transition-colors">Core Concept</a></li>
               <li><a href="#multi-account" className="hover:text-archival-accent transition-colors">Multi-Account Hub</a></li>
               <li><a href="#open-data" className="hover:text-archival-accent transition-colors">Virtual Feeds (Open Data)</a></li>
+              <li><a href="#data-retention" className="hover:text-archival-accent transition-colors">Data Point Retention</a></li>
               <li><a href="#specimens" className="hover:text-archival-accent transition-colors">Specimen Types</a></li>
               <li><a href="#provisioning" className="hover:text-archival-accent transition-colors">Auto-Provisioning</a></li>
               <li><a href="#logic-matrix" className="hover:text-archival-accent transition-colors">Logic Matrix</a></li>
+              <li><a href="#how-to" className="hover:text-archival-accent transition-colors">How-To Guide</a></li>
               <li><a href="#security" className="hover:text-archival-accent transition-colors">Security Protocol</a></li>
             </ul>
           </nav>
@@ -108,6 +110,23 @@ export default function DocsPage() {
               </div>
               <p>
                 Virtual Feeds can either seamlessly bind directly to a widget on the dashboard via local Redis pub/sub—behaving identically to hardware data—or automatically route their parsed values upstream to an existing Adafruit IO feed for cloud logging.
+              </p>
+            </div>
+          </section>
+
+          <div className="border-t border-archival-muted/20" />
+
+          <section id="data-retention" className="scroll-mt-12">
+            <div className="flex items-center gap-4 mb-6">
+              <Database className="w-6 h-6 text-archival-accent" />
+              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">Data Point Retention</h2>
+            </div>
+            <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
+              <p className="mb-6">
+                All incoming specimen values—whether from physical Adafruit IO hardware or Virtual Open Data Feeds—are automatically mirrored into a robust local <strong className="text-archival-accent">SQLite DataPoint Archive</strong>.
+              </p>
+              <p className="mb-6">
+                This enables flawless historical chart rendering globally. By default, the system runs an automated background cleanup script to continuously prune data older than 7 days, preventing database bloat without sacrificing insight continuity.
               </p>
             </div>
           </section>
@@ -198,18 +217,79 @@ export default function DocsPage() {
                   <p className="text-[0.75rem]">Performs mathematical (&gt;, &lt;, ==) or string comparisons locally with zero reliance on cloud computing.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
-                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. IF/ELSE TRIGGERS</div>
-                  <p className="text-[0.75rem]">Dispatches arrays of actions based on condition evaluation. Supports sequential delays, adafruit publishes, and webhooks for both IF (True) and ELSE (False) outcomes.</p>
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. IF/ELSE IF TRIGGERS</div>
+                  <p className="text-[0.75rem]">Dispatches arrays of actions based on condition evaluation. Supports independent conditions for both IF (True) and ELSE IF (False) outcomes, allowing for multi-state logic routing.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">4. WEBHOOK DISPATCH</div>
                   <p className="text-[0.75rem]">Trigger an external API via POST. Payloads support <code className="bg-archival-surface px-1">{"{{feedKey}}"}</code> interpolation to route live values dynamically.</p>
                 </div>
-                <div className="p-4 border border-archival-muted rounded bg-archival-bg/30 md:col-span-2">
-                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">5. MANUAL OVERRIDE (FORCE RUN)</div>
+                <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">5. INTER-WIRING</div>
+                  <p className="text-[0.75rem]">Chain automations by allowing one automation to trigger another, creating complex multi-stage logic pipelines (Max depth of 5 to prevent loops).</p>
+                </div>
+                <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">6. MANUAL OVERRIDE (FORCE RUN)</div>
                   <p className="text-[0.75rem]">Instantly execute any automation rule's action chain directly from the dashboard UI for rapid testing and immediate feedback.</p>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <div className="border-t border-archival-muted/20" />
+
+          <section id="how-to" className="scroll-mt-12">
+            <div className="flex items-center gap-4 mb-6">
+              <BookOpen className="w-6 h-6 text-archival-accent" />
+              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">How-To Guide (Quick Procedures)</h2>
+            </div>
+            <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg space-y-8">
+              
+              <div>
+                <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Adding a New Dashboard</h3>
+                <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
+                  <li>Navigate to the root page (Home).</li>
+                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">NEW_ARCHIVE_SECTOR</span>.</li>
+                  <li>Provide a name for your dashboard and commit the record.</li>
+                  <li>Click on the newly created dashboard block to enter it.</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Placing a Widget (Specimen)</h3>
+                <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
+                  <li>Open your desired Dashboard.</li>
+                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">NEW_SPECIMEN</span> in the header.</li>
+                  <li>Select the Widget Type (e.g. <span className="font-mono text-[0.75rem] bg-archival-bg px-1">MONITOR</span> or <span className="font-mono text-[0.75rem] bg-archival-bg px-1">SWITCH</span>).</li>
+                  <li>Choose an existing feed from the dropdown, or select <span className="font-mono text-[0.75rem] bg-archival-bg px-1">CREATE_NEW_FEED</span> to Auto-Provision a new one.</li>
+                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">COMMIT_RECORD</span> to place the widget on your dashboard grid.</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Creating an Automation Rule</h3>
+                <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
+                  <li>Navigate to <span className="font-mono text-[0.75rem] bg-archival-bg px-1">SYSTEM_LOGIC_MATRIX</span> (Automations) from the sidebar.</li>
+                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">NEW_AUTOMATION</span>.</li>
+                  <li>Under CONDITIONS, select a trigger feed (e.g. <span className="font-mono text-[0.75rem] bg-archival-bg px-1">temperature</span>), an operator (<span className="font-mono text-[0.75rem] bg-archival-bg px-1">&gt;</span>), and a value (<span className="font-mono text-[0.75rem] bg-archival-bg px-1">30</span>).</li>
+                  <li>Under ACTIONS, choose <span className="font-mono text-[0.75rem] bg-archival-bg px-1">PUBLISH TO FEED</span>, select your target feed (e.g. <span className="font-mono text-[0.75rem] bg-archival-bg px-1">fan_relay</span>), and set the payload to <span className="font-mono text-[0.75rem] bg-archival-bg px-1">1</span>.</li>
+                  <li>Optionally add <span className="font-mono text-[0.75rem] bg-archival-bg px-1">ELSE ACTIONS</span> (e.g. Set <span className="font-mono text-[0.75rem] bg-archival-bg px-1">fan_relay</span> to <span className="font-mono text-[0.75rem] bg-archival-bg px-1">0</span>) to automatically turn the fan off when the temperature drops below 30.</li>
+                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">COMMIT_RULE_TO_MATRIX</span>.</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Adding a Virtual Open Data Feed</h3>
+                <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
+                  <li>Navigate to <span className="font-mono text-[0.75rem] bg-archival-bg px-1">EXTERNAL_DATA_SOURCES</span> (Open Data) from the sidebar.</li>
+                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">ADD_DATA_SOURCE</span>.</li>
+                  <li>Input the API endpoint (e.g. <span className="font-mono text-[0.75rem] bg-archival-bg px-1">https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd</span>).</li>
+                  <li>Input the JSON Path to extract the value (e.g. <span className="font-mono text-[0.75rem] bg-archival-bg px-1">bitcoin.usd</span>).</li>
+                  <li>Set the CRON schedule (e.g. <span className="font-mono text-[0.75rem] bg-archival-bg px-1">*/5 * * * *</span> for every 5 minutes).</li>
+                  <li>Save the source. The feed will now appear in your widget binding dropdowns prefixed with <span className="font-mono text-[0.75rem] bg-archival-bg px-1">open_</span>.</li>
+                </ol>
+              </div>
+
             </div>
           </section>
 

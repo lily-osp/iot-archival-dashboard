@@ -35,6 +35,7 @@ export async function PATCH(
           scheduleCron: data.scheduleCron || null,
           timezone: data.timezone || null,
           conditionMatch: data.conditionMatch || "ALL",
+          elseConditionMatch: data.elseConditionMatch || "ALL",
           isActive: data.isActive
         }
       });
@@ -50,7 +51,8 @@ export async function PATCH(
               automationId: id,
               feedKey: c.feedKey,
               operator: c.operator,
-              value: c.value
+              value: c.value,
+              isElse: c.isElse || false
             }))
           });
         }

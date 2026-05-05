@@ -45,12 +45,14 @@ export async function POST(request: NextRequest) {
         scheduleCron: data.scheduleCron || null,
         timezone: data.timezone || null,
         conditionMatch: data.conditionMatch || "ALL",
+        elseConditionMatch: data.elseConditionMatch || "ALL",
         isActive: data.isActive !== undefined ? data.isActive : true,
         conditions: {
           create: (data.conditions || []).map((c: any) => ({
             feedKey: c.feedKey,
             operator: c.operator,
-            value: c.value
+            value: c.value,
+            isElse: c.isElse || false
           }))
         },
         actions: {

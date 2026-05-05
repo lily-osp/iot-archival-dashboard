@@ -84,6 +84,7 @@ model Automation {
   scheduleCron      String?            // e.g. "0 8 * * *"
   timezone          String?            // e.g. "Asia/Jakarta"
   conditionMatch    String             @default("ALL")
+  elseConditionMatch String            @default("ALL")
   conditions        AutomationCondition[]
   actions           AutomationAction[]
   isActive          Boolean            @default(true)
@@ -96,6 +97,7 @@ model AutomationCondition {
   feedKey      String
   operator     String
   value        String
+  isElse       Boolean    @default(false)
   automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
   automationId String
 }
@@ -112,4 +114,13 @@ model AutomationAction {
   isElse       Boolean    @default(false)
   automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
   automationId String
+}
+
+model DataPoint {
+  id        String   @id @default(cuid())
+  feedKey   String
+  value     String
+  createdAt DateTime @default(now())
+
+  @@index([feedKey, createdAt])
 }

@@ -14,16 +14,18 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
 
 - **Swiss Archival Design**: Warm cream palette, blueprint grids, tactile noise grain, and minimalist glassmorphism elements.
 - **Auto-Discovery**: Automatically fetches all active feeds from your Adafruit IO account.
+- **Data Point Retention**: Automatically archives incoming specimen data locally in SQLite, retaining up to 7 days (configurable). Guarantees chart continuity and historical tracking natively for both Adafruit feeds and Virtual (Open) Data Feeds.
 - **Zero-Touch Provisioning**: Create new feeds directly from the dashboard without needing to access the Adafruit IO console.
 - **Real-time Streaming**: Utilizes MQTT and Redis Pub/Sub to push instant updates via Server-Sent Events (SSE).
 - **Advanced Logic Matrix (Automations)**:
   - Supports 1-to-1, 1-to-many, and many-to-many logic pipelines.
   - Multi-condition trigger support (`MATCH ALL` / `MATCH ANY`).
   - Mathematical and string evaluations (`>`, `<`, `==`, `!=`, `>=`, `<=`) running locally for ultra-low latency.
-  - **IF/ELSE Logic Branches**: Consolidate paired actions into a single rule. Run primary actions when conditions are met, and "Else Actions" when conditions fall false (e.g. Turn lights ON at 6 PM, ELSE turn them OFF).
+  - **IF/ELSE IF Logic Branches**: Consolidate complex logic into a single rule. Run primary actions when conditions are met, and "Else Actions" when alternate conditions are met (e.g. Turn lights ON if lux < 100, ELSE IF time is > 8 PM turn them OFF). Each block supports independent `MATCH ALL` / `MATCH ANY` evaluation.
   - Sequential action execution with configurable delays between steps.
     - **Manual Override (Force Run)**: Instantly execute any automation rule's action chain directly from the dashboard UI for rapid testing.
     - **Webhook Dispatch**: Trigger external APIs via POST with payload interpolation using `{{feedKey}}`.
+    - **Inter-Automation Wiring**: Chain automations together by allowing one automation to trigger another, creating complex multi-stage logic pipelines.
   - **Cross-Account Automations**: Trigger rules on an event from one Adafruit IO account, evaluate conditions against feeds from another, and publish actions to a third.
 - **Virtual Feeds (Open Data Integration)**:
   - Poll unauthenticated, external APIs (e.g. weather, crypto, transit) natively via BullMQ workers.
@@ -83,6 +85,37 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
 4. **Access the dashboard**: Open [http://localhost:3010](http://localhost:3010) in your browser. Register an initial admin account on the login screen to access the archive.
 
 5. **Configure Credentials**: Navigate to **System Configuration** within the dashboard to set your Adafruit IO Username and Key securely.
+
+## How-To Guide (Quick Procedures)
+
+### Adding a New Dashboard
+1. Navigate to the root page (Home).
+2. Click `NEW_ARCHIVE_SECTOR`.
+3. Provide a name for your dashboard and commit the record.
+4. Click on the newly created dashboard block to enter it.
+
+### Placing a Widget (Specimen)
+1. Open your desired Dashboard.
+2. Click `NEW_SPECIMEN` in the header.
+3. Select the Widget Type (e.g. `MONITOR` or `SWITCH`).
+4. Choose an existing feed from the dropdown, or select `CREATE_NEW_FEED` to Auto-Provision a new one.
+5. Click `COMMIT_RECORD` to place the widget on your dashboard grid.
+
+### Creating an Automation Rule
+1. Navigate to `SYSTEM_LOGIC_MATRIX` (Automations) from the sidebar.
+2. Click `NEW_AUTOMATION`.
+3. Under CONDITIONS, select a trigger feed (e.g. `temperature`), an operator (`>`), and a value (`30`).
+4. Under ACTIONS, choose `PUBLISH TO FEED`, select your target feed (e.g. `fan_relay`), and set the payload to `1`.
+5. Optionally add `ELSE CONDITIONS` and `ELSE ACTIONS` (e.g. Set `fan_relay` to `0` if temperature drops below 30) to automate both states natively.
+6. Click `COMMIT_RULE_TO_MATRIX`.
+
+### Adding a Virtual Open Data Feed
+1. Navigate to `EXTERNAL_DATA_SOURCES` (Open Data) from the sidebar.
+2. Click `ADD_DATA_SOURCE`.
+3. Input the API endpoint (e.g. `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd`).
+4. Input the JSON Path to extract the value (e.g. `bitcoin.usd`).
+5. Set the CRON schedule (e.g. `*/5 * * * *` for every 5 minutes).
+6. Save the source. The feed will now appear in your widget binding dropdowns prefixed with `open_`.
 
 ## Tech Stack
 

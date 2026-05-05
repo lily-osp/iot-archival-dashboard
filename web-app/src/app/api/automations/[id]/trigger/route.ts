@@ -25,38 +25,8 @@ export async function POST(
     console.log(`System Archive: Force Manual Run for Rule [${rule.name}]. Executing ${rule.actions.length} actions.`);
 
     // Execute actions sequentially
-    for (const action of rule.actions) {
-      if (action.type === "delay") {
-        console.log(`System Archive: Delaying for ${action.delayMs}ms`);
-        await new Promise((resolve) => setTimeout(resolve, action.delayMs || 0));
-      } else if (action.type === "publish" && action.feedKey) {
-        const { sendFeedData } = await import("@/lib/adafruit");
-        console.log(`System Archive: Action Execution: ${action.feedKey} -> ${action.value}`);
-        await sendFeedData(action.feedKey, action.value!).catch((e) => {
-          console.error(`System Archive: Automation Action [${action.feedKey}] Failed:`, e.message);
-        });
-      } else if (action.type === "webhook" && action.targetUrl) {
-        try {
-          let parsedPayload = action.payload || "";
-          const matches = parsedPayload.match(/\{\{([^}]+)\}\}/g);
-          if (matches) {
-            for (const match of matches) {
-              const key = match.replace(/\{\{|\}\}/g, "");
-              const val = await redis.get(`last:${key}`);
-              parsedPayload = parsedPayload.replace(match, val || "");
-            }
-          }
-          console.log(`System Archive: Triggering Webhook: ${action.targetUrl}`);
-          await fetch(action.targetUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: parsedPayload
-          });
-        } catch (e: any) {
-          console.error(`System Archive: Webhook Failed:`, e.message);
-        }
-      }
-    }
+    const { executeActions } = await import("@/lib/actionEngine");
+    await executeActions(rule.actions, 0);
 
     return NextResponse.json({ success: true, message: "Automation triggered successfully." });
   } catch (error: any) {

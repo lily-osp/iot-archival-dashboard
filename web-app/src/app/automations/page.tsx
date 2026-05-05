@@ -24,7 +24,8 @@ export default function AutomationsPage() {
     scheduleCron: "",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     conditionMatch: "ALL",
-    conditions: [{ feedKey: "", operator: "==", value: "" }],
+    elseConditionMatch: "ALL",
+    conditions: [{ feedKey: "", operator: "==", value: "", isElse: false }],
     actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "", isElse: false }],
     isActive: true
   });
@@ -95,7 +96,8 @@ export default function AutomationsPage() {
       scheduleCron: "",
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       conditionMatch: "ALL",
-      conditions: [{ feedKey: "", operator: "==", value: "" }],
+      elseConditionMatch: "ALL",
+      conditions: [{ feedKey: "", operator: "==", value: "", isElse: false }],
       actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "", isElse: false }],
       isActive: true 
     });
@@ -114,7 +116,8 @@ export default function AutomationsPage() {
       scheduleCron: rule.scheduleCron || "",
       timezone: rule.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       conditionMatch: rule.conditionMatch || "ALL",
-      conditions: rule.conditions?.length ? rule.conditions : [{ feedKey: "", operator: "==", value: "" }],
+      elseConditionMatch: rule.elseConditionMatch || "ALL",
+      conditions: rule.conditions?.length ? rule.conditions : [{ feedKey: "", operator: "==", value: "", isElse: false }],
       actions: rule.actions?.length ? rule.actions : [{ type: "publish", feedKey: "", value: "", delayMs: 0, isElse: false }],
       isActive: rule.isActive
     });
@@ -205,6 +208,16 @@ export default function AutomationsPage() {
     }))
   ];
 
+  const automationOptions = [
+    { value: "", label: "SELECT_AUTOMATION..." },
+    ...automations
+      .filter((auto) => auto.id !== editingRule?.id)
+      .map(auto => ({ 
+        value: auto.id, 
+        label: `${auto.name.toUpperCase()} (${auto.id.slice(0,8).toUpperCase()})` 
+      }))
+  ];
+
   return (
     <Shell>
       <header className="mb-24 p-8 border-b border-archival-muted/50 relative overflow-hidden">
@@ -285,13 +298,13 @@ export default function AutomationsPage() {
                   </div>
                 )}
                 
-                {rule.conditions?.length > 0 && (
+                {rule.conditions?.filter((c: any) => !c.isElse).length > 0 && (
                   <>
                     <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">
                       IF {rule.conditionMatch === "ALL" ? "ALL" : "ANY"} OF:
                     </div>
-                    {rule.conditions.map((cond: any, i: number) => (
-                      <div key={i} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
+                    {rule.conditions.filter((c: any) => !c.isElse).map((cond: any, i: number) => (
+                      <div key={`if-${i}`} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
                         <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">COND {i + 1}</span>
                         <span className="font-bold text-archival-fg break-all">{cond.feedKey}</span>
                         <span className="text-archival-accent">{cond.operator}</span>
@@ -319,6 +332,12 @@ export default function AutomationsPage() {
                         <span>WEBHOOK</span>
                         <span className="font-bold text-archival-fg break-all">{act.targetUrl}</span>
                       </>
+                    ) : act.type === "trigger" ? (
+                      <>
+                        <Activity className="w-3 h-3 text-archival-accent" />
+                        <span>TRIGGER</span>
+                        <span className="font-bold text-archival-fg break-all">{automations.find(a => a.id === act.value)?.name || act.value}</span>
+                      </>
                     ) : (
                       <>
                         <span>SET</span>
@@ -333,8 +352,16 @@ export default function AutomationsPage() {
                 {rule.actions?.some((a: any) => a.isElse) && (
                   <>
                     <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-muted-fg opacity-60 uppercase mt-4">
-                      ELSE:
+                      ELSE{rule.conditions?.some((c: any) => c.isElse) ? ` IF ${rule.elseConditionMatch === "ALL" ? "ALL" : "ANY"} OF` : ""}:
                     </div>
+                    {rule.conditions?.filter((c: any) => c.isElse).map((cond: any, i: number) => (
+                      <div key={`else-cond-${i}`} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em] opacity-80 mb-2">
+                        <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">COND {i + 1}</span>
+                        <span className="font-bold text-archival-fg break-all">{cond.feedKey}</span>
+                        <span className="text-archival-accent">{cond.operator}</span>
+                        <span className="font-bold text-archival-fg">{cond.value}</span>
+                      </div>
+                    ))}
                     {rule.actions?.filter((a: any) => a.isElse).map((act: any, i: number) => (
                       <div key={`else-${i}`} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em] opacity-80">
                         <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">STEP {i + 1}</span>
@@ -349,6 +376,12 @@ export default function AutomationsPage() {
                             <Activity className="w-3 h-3 text-archival-muted-fg" />
                             <span>WEBHOOK</span>
                             <span className="font-bold text-archival-fg break-all">{act.targetUrl}</span>
+                          </>
+                        ) : act.type === "trigger" ? (
+                          <>
+                            <Activity className="w-3 h-3 text-archival-muted-fg" />
+                            <span>TRIGGER</span>
+                            <span className="font-bold text-archival-fg break-all">{automations.find(a => a.id === act.value)?.name || act.value}</span>
                           </>
                         ) : (
                           <>
@@ -494,7 +527,9 @@ export default function AutomationsPage() {
               />
             </div>
             
-            {formData.conditions.map((cond, index) => (
+            {formData.conditions.map((cond, index) => {
+              if (cond.isElse) return null;
+              return (
               <div key={index} className="p-4 border border-archival-muted/30 bg-archival-surface rounded relative space-y-4">
                 <div className="absolute top-2 right-2">
                   <button 
@@ -553,14 +588,14 @@ export default function AutomationsPage() {
                   />
                 </div>
               </div>
-            ))}
+            )})}
             <Button 
               type="button" 
               variant="ghost" 
               onClick={() => {
                 setFormData({ 
                   ...formData, 
-                  conditions: [...formData.conditions, { feedKey: "", operator: "==", value: "" }] 
+                  conditions: [...formData.conditions, { feedKey: "", operator: "==", value: "", isElse: false }] 
                 });
               }}
               className="w-full border-dashed"
@@ -601,7 +636,8 @@ export default function AutomationsPage() {
                   options={[
                     { value: "publish", label: "PUBLISH TO FEED" },
                     { value: "delay", label: "WAIT (DELAY)" },
-                    { value: "webhook", label: "TRIGGER WEBHOOK" }
+                    { value: "webhook", label: "TRIGGER WEBHOOK" },
+                    { value: "trigger", label: "TRIGGER AUTOMATION" }
                   ]}
                   required
                 />
@@ -661,6 +697,18 @@ export default function AutomationsPage() {
                       <p className="text-[0.625rem] font-sans text-archival-muted-fg">Use {'{{feedKey}}'} to interpolate live values.</p>
                     </div>
                   </>
+                ) : act.type === "trigger" ? (
+                  <Select 
+                    label="Target Automation"
+                    value={act.value || ""}
+                    onChange={(val) => {
+                      const newActs = [...formData.actions];
+                      newActs[index].value = val;
+                      setFormData({ ...formData, actions: newActs });
+                    }}
+                    options={automationOptions}
+                    required
+                  />
                 ) : (
                   <Input 
                     label="Delay in Milliseconds"
@@ -695,7 +743,98 @@ export default function AutomationsPage() {
 
           {/* ELSE ACTIONS */}
           <div className="space-y-6 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
-            <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-muted-fg uppercase">ELSE ACTIONS (OPTIONAL - WHEN CONDITIONS ARE FALSE)</div>
+            <div className="flex justify-between items-center">
+              <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-muted-fg uppercase">ELSE CONDITIONS (OPTIONAL)</div>
+              <Select 
+                label=""
+                value={formData.elseConditionMatch}
+                onChange={(val) => setFormData({ ...formData, elseConditionMatch: val })}
+                options={[
+                  { value: "ALL", label: "MATCH ALL" },
+                  { value: "ANY", label: "MATCH ANY" }
+                ]}
+              />
+            </div>
+            
+            {formData.conditions.map((cond, index) => {
+              if (!cond.isElse) return null;
+              return (
+              <div key={`else-cond-${index}`} className="p-4 border border-archival-muted/30 bg-archival-surface/50 rounded relative space-y-4">
+                <div className="absolute top-2 right-2">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const newConds = [...formData.conditions];
+                      newConds.splice(index, 1);
+                      setFormData({ ...formData, conditions: newConds });
+                    }}
+                    className="text-archival-muted-fg hover:text-archival-accent"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <Select 
+                  label="Listen to Feed"
+                  value={cond.feedKey}
+                  onChange={(val) => {
+                    const newConds = [...formData.conditions];
+                    newConds[index].feedKey = val;
+                    setFormData({ ...formData, conditions: newConds });
+                  }}
+                  options={feedOptions}
+                  required={formData.type !== "TIME"}
+                />
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <Select 
+                    label="Operator"
+                    value={cond.operator}
+                    onChange={(val) => {
+                      const newConds = [...formData.conditions];
+                      newConds[index].operator = val;
+                      setFormData({ ...formData, conditions: newConds });
+                    }}
+                    options={[
+                      { value: "==", label: "EQUALS (==)" },
+                      { value: "!=", label: "NOT EQUALS (!=)" },
+                      { value: ">", label: "GREATER THAN (>)" },
+                      { value: "<", label: "LESS THAN (<)" },
+                      { value: ">=", label: "GREATER OR EQUAL (>=)" },
+                      { value: "<=", label: "LESS OR EQUAL (<=)" }
+                    ]}
+                    required={formData.type !== "TIME" || cond.feedKey !== ""}
+                  />
+                  <Input 
+                    label="Threshold Value"
+                    value={cond.value}
+                    onChange={(e) => {
+                      const newConds = [...formData.conditions];
+                      newConds[index].value = e.target.value;
+                      setFormData({ ...formData, conditions: newConds });
+                    }}
+                    placeholder="e.g. 30"
+                    required={formData.type !== "TIME" || cond.feedKey !== ""}
+                  />
+                </div>
+              </div>
+            )})}
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => {
+                setFormData({ 
+                  ...formData, 
+                  conditions: [...formData.conditions, { feedKey: "", operator: "==", value: "", isElse: true }] 
+                });
+              }}
+              className="w-full border-dashed opacity-70 hover:opacity-100"
+            >
+              <Plus className="w-4 h-4 mr-2" /> ADD ELSE CONDITION
+            </Button>
+
+            <div className="border-t border-archival-muted/30 my-6"></div>
+
+            <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-muted-fg uppercase">ELSE ACTIONS (RESULTS)</div>
             
             {formData.actions.map((act, index) => {
               if (!act.isElse) return null;
@@ -726,7 +865,8 @@ export default function AutomationsPage() {
                   options={[
                     { value: "publish", label: "PUBLISH TO FEED" },
                     { value: "delay", label: "WAIT (DELAY)" },
-                    { value: "webhook", label: "TRIGGER WEBHOOK" }
+                    { value: "webhook", label: "TRIGGER WEBHOOK" },
+                    { value: "trigger", label: "TRIGGER AUTOMATION" }
                   ]}
                   required
                 />
@@ -785,6 +925,18 @@ export default function AutomationsPage() {
                       />
                     </div>
                   </>
+                ) : act.type === "trigger" ? (
+                  <Select 
+                    label="Target Automation"
+                    value={act.value || ""}
+                    onChange={(val) => {
+                      const newActs = [...formData.actions];
+                      newActs[index].value = val;
+                      setFormData({ ...formData, actions: newActs });
+                    }}
+                    options={automationOptions}
+                    required
+                  />
                 ) : (
                   <Input 
                     label="Delay in Milliseconds"

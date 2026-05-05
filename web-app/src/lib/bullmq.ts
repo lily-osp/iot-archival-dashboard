@@ -35,75 +35,60 @@ export const automationWorker = new Worker(
         return;
       }
 
-      let conditionsMet = 0;
-      for (const cond of rule.conditions) {
-        const currentValStr = await redis.get(`last:${cond.feedKey}`);
-        if (currentValStr === null) continue;
-        
-        let triggered = false;
-        const msgVal = parseFloat(currentValStr);
-        const condVal = parseFloat(cond.value);
-        
-        if (!isNaN(msgVal) && !isNaN(condVal)) {
-          switch (cond.operator) {
-            case '>': triggered = msgVal > condVal; break;
-            case '<': triggered = msgVal < condVal; break;
-            case '>=': triggered = msgVal >= condVal; break;
-            case '<=': triggered = msgVal <= condVal; break;
-            case '==': triggered = msgVal === condVal; break;
-            case '!=': triggered = msgVal !== condVal; break;
-          }
-        } else {
-          switch (cond.operator) {
-            case '==': triggered = currentValStr === cond.value; break;
-            case '!=': triggered = currentValStr !== cond.value; break;
-          }
-        }
-        if (triggered) conditionsMet++;
-      }
+      const ifConditions = rule.conditions.filter((c: any) => !c.isElse);
+      const elseConditions = rule.conditions.filter((c: any) => c.isElse);
 
-      const isTriggered = rule.conditions.length === 0 || 
-        (rule.conditionMatch === "ANY" 
-          ? conditionsMet > 0 
-          : conditionsMet === rule.conditions.length);
-
-      const actionsToRun = isTriggered ? rule.actions.filter((a: any) => !a.isElse) : rule.actions.filter((a: any) => a.isElse);
-
-      if (actionsToRun.length > 0) {
-        console.log(`System Archive: Rule [${rule.name}] evaluated (${isTriggered ? 'TRUE' : 'FALSE'}). Executing ${actionsToRun.length} actions.`);
-
-        for (const action of actionsToRun) {
-          if (action.type === "delay") {
-            console.log(`System Archive: Delaying for ${action.delayMs}ms`);
-            await new Promise((resolve) => setTimeout(resolve, action.delayMs || 0));
-          } else if (action.type === "publish" && action.feedKey) {
-            const { sendFeedData } = await import("./adafruit");
-            console.log(`System Archive: Action Execution: ${action.feedKey} -> ${action.value}`);
-            await sendFeedData(action.feedKey, action.value!).catch((e) => {
-              console.error(`System Archive: Automation Action [${action.feedKey}] Failed:`, e.message);
-            });
-          } else if (action.type === "webhook" && action.targetUrl) {
-            try {
-              let parsedPayload = action.payload || "";
-              const matches = parsedPayload.match(/\{\{([^}]+)\}\}/g);
-              if (matches) {
-                for (const match of matches) {
-                  const key = match.replace(/\{\{|\}\}/g, "");
-                  const val = await redis.get(`last:${key}`);
-                  parsedPayload = parsedPayload.replace(match, val || "");
-                }
-              }
-              console.log(`System Archive: Triggering Webhook: ${action.targetUrl}`);
-              await fetch(action.targetUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: parsedPayload
-              });
-            } catch (e: any) {
-              console.error(`System Archive: Webhook Failed:`, e.message);
+      const evaluateConditions = async (conditions: any[], matchType: string) => {
+        if (conditions.length === 0) return true;
+        let met = 0;
+        for (const cond of conditions) {
+          const currentValStr = await redis.get(`last:${cond.feedKey}`);
+          if (currentValStr === null) continue;
+          
+          let triggered = false;
+          const msgVal = parseFloat(currentValStr);
+          const condVal = parseFloat(cond.value);
+          
+          if (!isNaN(msgVal) && !isNaN(condVal)) {
+            switch (cond.operator) {
+              case '>': triggered = msgVal > condVal; break;
+              case '<': triggered = msgVal < condVal; break;
+              case '>=': triggered = msgVal >= condVal; break;
+              case '<=': triggered = msgVal <= condVal; break;
+              case '==': triggered = msgVal === condVal; break;
+              case '!=': triggered = msgVal !== condVal; break;
+            }
+          } else {
+            switch (cond.operator) {
+              case '==': triggered = currentValStr === cond.value; break;
+              case '!=': triggered = currentValStr !== cond.value; break;
             }
           }
+          if (triggered) met++;
         }
+        return matchType === "ANY" ? met > 0 : met === conditions.length;
+      };
+
+      const isIfTriggered = ifConditions.length === 0 ? true : await evaluateConditions(ifConditions, rule.conditionMatch);
+      
+      let actionsToRun: any[] = [];
+      let evaluationLog = "";
+
+      if (isIfTriggered) {
+        actionsToRun = rule.actions.filter((a: any) => !a.isElse);
+        evaluationLog = "IF Block -> TRUE";
+      } else {
+        const isElseTriggered = elseConditions.length === 0 ? true : await evaluateConditions(elseConditions, rule.elseConditionMatch);
+        if (isElseTriggered && (rule.actions.filter((a: any) => a.isElse).length > 0 || elseConditions.length > 0)) {
+          actionsToRun = rule.actions.filter((a: any) => a.isElse);
+          evaluationLog = elseConditions.length > 0 ? "ELSE IF Block -> TRUE" : "ELSE Block -> TRUE";
+        }
+      }
+
+      if (actionsToRun.length > 0) {
+        console.log(`System Archive: Rule [${rule.name}] scheduled evaluation (${evaluationLog}). Executing ${actionsToRun.length} actions.`);
+        const { executeActions } = await import("./actionEngine");
+        await executeActions(actionsToRun, 0);
       } else {
         console.log(`System Archive: Rule [${rule.name}] scheduled execution skipped due to unmet conditions.`);
       }
@@ -221,6 +206,9 @@ export const openDataWorker = new Worker(
         console.log(`System Archive: Routing Open Data [${source.name}] -> Virtual Feed [${virtualKey}]: ${value}`);
         redis.publish(`feed:${virtualKey}`, value);
         redis.set(`last:${virtualKey}`, value);
+        
+        const { recordDataPoint } = await import("./dataRetention");
+        recordDataPoint(virtualKey, value);
 
         // Evaluate automations manually for this virtual feed
         try {
@@ -236,75 +224,62 @@ export const openDataWorker = new Worker(
           });
           
           for (const rule of automations) {
-            let conditionsMet = 0;
-            for (const cond of rule.conditions) {
-              const currentValStr = cond.feedKey === virtualKey ? value : await redis.get(`last:${cond.feedKey}`);
-              if (currentValStr === null) continue;
-              
-              let triggered = false;
-              const msgVal = parseFloat(currentValStr);
-              const condVal = parseFloat(cond.value);
-              
-              if (!isNaN(msgVal) && !isNaN(condVal)) {
-                switch (cond.operator) {
-                  case '>': triggered = msgVal > condVal; break;
-                  case '<': triggered = msgVal < condVal; break;
-                  case '>=': triggered = msgVal >= condVal; break;
-                  case '<=': triggered = msgVal <= condVal; break;
-                  case '==': triggered = msgVal === condVal; break;
-                  case '!=': triggered = msgVal !== condVal; break;
-                }
-              } else {
-                switch (cond.operator) {
-                  case '==': triggered = currentValStr === cond.value; break;
-                  case '!=': triggered = currentValStr !== cond.value; break;
-                }
-              }
-              if (triggered) conditionsMet++;
-            }
+            const ifConditions = rule.conditions.filter((c: any) => !c.isElse);
+            const elseConditions = rule.conditions.filter((c: any) => c.isElse);
 
-            const isTriggered = rule.conditionMatch === "ANY" 
-              ? conditionsMet > 0 
-              : conditionsMet === rule.conditions.length;
-
-            if (rule.conditions.length > 0) {
-              const actionsToRun = isTriggered ? rule.actions.filter((a: any) => !a.isElse) : rule.actions.filter((a: any) => a.isElse);
-              
-              if (actionsToRun.length > 0) {
-                console.log(`System Archive: Rule [${rule.name}] evaluated by Virtual Feed (${isTriggered ? 'TRUE' : 'FALSE'}). Executing ${actionsToRun.length} actions.`);
+            const evaluateConditions = async (conditions: any[], matchType: string) => {
+              if (conditions.length === 0) return true;
+              let met = 0;
+              for (const cond of conditions) {
+                const currentValStr = cond.feedKey === virtualKey ? value : await redis.get(`last:${cond.feedKey}`);
+                if (currentValStr === null) continue;
                 
-                for (const action of actionsToRun) {
-                if (action.type === "delay") {
-                  await new Promise(resolve => setTimeout(resolve, action.delayMs || 0));
-                } else if (action.type === "publish" && action.feedKey) {
-                  const { sendFeedData } = await import("./adafruit");
-                  await sendFeedData(action.feedKey, action.value!).catch(e => {
-                    console.error(`System Archive: Automation Action [${action.feedKey}] Failed:`, e.message);
-                  });
-                } else if (action.type === "webhook" && action.targetUrl) {
-                  try {
-                    let parsedPayload = action.payload || "";
-                    const matches = parsedPayload.match(/\{\{([^}]+)\}\}/g);
-                    if (matches) {
-                      for (const match of matches) {
-                        const key = match.replace(/\{\{|\}\}/g, "");
-                        const val = await redis.get(`last:${key}`);
-                        parsedPayload = parsedPayload.replace(match, val || "");
-                      }
-                    }
-                    await fetch(action.targetUrl, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: parsedPayload
-                    });
-                  } catch (e: any) {
-                    console.error(`System Archive: Webhook Failed:`, e.message);
+                let triggered = false;
+                const msgVal = parseFloat(currentValStr);
+                const condVal = parseFloat(cond.value);
+                
+                if (!isNaN(msgVal) && !isNaN(condVal)) {
+                  switch (cond.operator) {
+                    case '>': triggered = msgVal > condVal; break;
+                    case '<': triggered = msgVal < condVal; break;
+                    case '>=': triggered = msgVal >= condVal; break;
+                    case '<=': triggered = msgVal <= condVal; break;
+                    case '==': triggered = msgVal === condVal; break;
+                    case '!=': triggered = msgVal !== condVal; break;
+                  }
+                } else {
+                  switch (cond.operator) {
+                    case '==': triggered = currentValStr === cond.value; break;
+                    case '!=': triggered = currentValStr !== cond.value; break;
                   }
                 }
+                if (triggered) met++;
+              }
+              return matchType === "ANY" ? met > 0 : met === conditions.length;
+            };
+
+            const isIfTriggered = ifConditions.length === 0 ? false : await evaluateConditions(ifConditions, rule.conditionMatch);
+            
+            let actionsToRun: any[] = [];
+            let evaluationLog = "";
+
+            if (isIfTriggered) {
+              actionsToRun = rule.actions.filter((a: any) => !a.isElse);
+              evaluationLog = "IF Block -> TRUE";
+            } else {
+              const isElseTriggered = elseConditions.length === 0 ? true : await evaluateConditions(elseConditions, rule.elseConditionMatch);
+              if (isElseTriggered && (rule.actions.filter((a: any) => a.isElse).length > 0 || elseConditions.length > 0)) {
+                actionsToRun = rule.actions.filter((a: any) => a.isElse);
+                evaluationLog = elseConditions.length > 0 ? "ELSE IF Block -> TRUE" : "ELSE Block -> TRUE";
               }
             }
+
+            if (actionsToRun.length > 0) {
+              console.log(`System Archive: Rule [${rule.name}] evaluated by Virtual Feed (${evaluationLog}). Executing ${actionsToRun.length} actions.`);
+              const { executeActions } = await import("./actionEngine");
+              await executeActions(actionsToRun, 0, virtualKey);
+            }
           }
-        }
       } catch(err) {
         console.error("System Archive: Rule Evaluation Error from Virtual Feed:", err);
       }
