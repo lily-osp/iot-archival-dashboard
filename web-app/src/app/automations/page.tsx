@@ -25,7 +25,7 @@ export default function AutomationsPage() {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     conditionMatch: "ALL",
     conditions: [{ feedKey: "", operator: "==", value: "" }],
-    actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "" }],
+    actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "", isElse: false }],
     isActive: true
   });
 
@@ -96,7 +96,7 @@ export default function AutomationsPage() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       conditionMatch: "ALL",
       conditions: [{ feedKey: "", operator: "==", value: "" }],
-      actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "" }],
+      actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "", isElse: false }],
       isActive: true 
     });
     setIsModalOpen(true);
@@ -115,7 +115,7 @@ export default function AutomationsPage() {
       timezone: rule.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       conditionMatch: rule.conditionMatch || "ALL",
       conditions: rule.conditions?.length ? rule.conditions : [{ feedKey: "", operator: "==", value: "" }],
-      actions: rule.actions?.length ? rule.actions : [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
+      actions: rule.actions?.length ? rule.actions : [{ type: "publish", feedKey: "", value: "", delayMs: 0, isElse: false }],
       isActive: rule.isActive
     });
     setIsModalOpen(true);
@@ -304,8 +304,8 @@ export default function AutomationsPage() {
                 <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase mt-4">
                   THEN:
                 </div>
-                {rule.actions?.map((act: any, i: number) => (
-                  <div key={i} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
+                {rule.actions?.filter((a: any) => !a.isElse).map((act: any, i: number) => (
+                  <div key={`main-${i}`} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em]">
                     <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">STEP {i + 1}</span>
                     {act.type === "delay" ? (
                       <>
@@ -329,6 +329,39 @@ export default function AutomationsPage() {
                     )}
                   </div>
                 ))}
+
+                {rule.actions?.some((a: any) => a.isElse) && (
+                  <>
+                    <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-muted-fg opacity-60 uppercase mt-4">
+                      ELSE:
+                    </div>
+                    {rule.actions?.filter((a: any) => a.isElse).map((act: any, i: number) => (
+                      <div key={`else-${i}`} className="flex flex-wrap items-center gap-2 text-archival-muted-fg font-mono text-[0.75rem] uppercase tracking-[0.1em] opacity-80">
+                        <span className="shrink-0 bg-archival-bg px-2 py-1 rounded border border-archival-muted/50">STEP {i + 1}</span>
+                        {act.type === "delay" ? (
+                          <>
+                            <Clock className="w-3 h-3 text-archival-muted-fg" />
+                            <span>WAIT</span>
+                            <span className="font-bold text-archival-fg">{act.delayMs}ms</span>
+                          </>
+                        ) : act.type === "webhook" ? (
+                          <>
+                            <Activity className="w-3 h-3 text-archival-muted-fg" />
+                            <span>WEBHOOK</span>
+                            <span className="font-bold text-archival-fg break-all">{act.targetUrl}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>SET</span>
+                            <span className="font-bold text-archival-fg break-all">{act.feedKey}</span>
+                            <span>TO</span>
+                            <span className="font-bold text-archival-fg">{act.value}</span>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
           ))
@@ -539,7 +572,9 @@ export default function AutomationsPage() {
           <div className="space-y-6 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
             <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase">ACTIONS (RESULTS)</div>
             
-            {formData.actions.map((act, index) => (
+            {formData.actions.map((act, index) => {
+              if (act.isElse) return null;
+              return (
               <div key={index} className="p-4 border border-archival-muted/30 bg-archival-surface rounded relative space-y-4">
                 <div className="absolute top-2 right-2">
                   <button 
@@ -587,7 +622,7 @@ export default function AutomationsPage() {
                     
                     <Input 
                       label="Set Payload To"
-                      value={act.value}
+                      value={act.value || ""}
                       onChange={(e) => {
                         const newActs = [...formData.actions];
                         newActs[index].value = e.target.value;
@@ -630,7 +665,7 @@ export default function AutomationsPage() {
                   <Input 
                     label="Delay in Milliseconds"
                     type="number"
-                    value={act.delayMs.toString()}
+                    value={act.delayMs?.toString() || "0"}
                     onChange={(e) => {
                       const newActs = [...formData.actions];
                       newActs[index].delayMs = parseInt(e.target.value) || 0;
@@ -641,7 +676,7 @@ export default function AutomationsPage() {
                   />
                 )}
               </div>
-            ))}
+            )})}
             
             <Button 
               type="button" 
@@ -649,12 +684,136 @@ export default function AutomationsPage() {
               onClick={() => {
                 setFormData({ 
                   ...formData, 
-                  actions: [...formData.actions, { type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "" }] 
+                  actions: [...formData.actions, { type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "", isElse: false }] 
                 });
               }}
               className="w-full border-dashed"
             >
               <Plus className="w-4 h-4 mr-2" /> ADD ACTION
+            </Button>
+          </div>
+
+          {/* ELSE ACTIONS */}
+          <div className="space-y-6 p-6 border border-archival-muted/50 rounded-[6px] bg-archival-bg/50">
+            <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-muted-fg uppercase">ELSE ACTIONS (OPTIONAL - WHEN CONDITIONS ARE FALSE)</div>
+            
+            {formData.actions.map((act, index) => {
+              if (!act.isElse) return null;
+              return (
+              <div key={index} className="p-4 border border-archival-muted/30 bg-archival-surface/50 rounded relative space-y-4">
+                <div className="absolute top-2 right-2">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const newActs = [...formData.actions];
+                      newActs.splice(index, 1);
+                      setFormData({ ...formData, actions: newActs });
+                    }}
+                    className="text-archival-muted-fg hover:text-archival-accent"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                <Select 
+                  label="Action Type"
+                  value={act.type}
+                  onChange={(val) => {
+                    const newActs = [...formData.actions];
+                    newActs[index].type = val;
+                    setFormData({ ...formData, actions: newActs });
+                  }}
+                  options={[
+                    { value: "publish", label: "PUBLISH TO FEED" },
+                    { value: "delay", label: "WAIT (DELAY)" },
+                    { value: "webhook", label: "TRIGGER WEBHOOK" }
+                  ]}
+                  required
+                />
+
+                {act.type === "publish" ? (
+                  <>
+                    <Select 
+                      label="Target Feed"
+                      value={act.feedKey}
+                      onChange={(val) => {
+                        const newActs = [...formData.actions];
+                        newActs[index].feedKey = val;
+                        setFormData({ ...formData, actions: newActs });
+                      }}
+                      options={feedOptions}
+                      required
+                    />
+                    
+                    <Input 
+                      label="Set Payload To"
+                      value={act.value || ""}
+                      onChange={(e) => {
+                        const newActs = [...formData.actions];
+                        newActs[index].value = e.target.value;
+                        setFormData({ ...formData, actions: newActs });
+                      }}
+                      placeholder="e.g. OFF or 0"
+                      required
+                    />
+                  </>
+                ) : act.type === "webhook" ? (
+                  <>
+                    <Input 
+                      label="Target URL"
+                      type="url"
+                      value={act.targetUrl || ""}
+                      onChange={(e) => {
+                        const newActs = [...formData.actions];
+                        newActs[index].targetUrl = e.target.value;
+                        setFormData({ ...formData, actions: newActs });
+                      }}
+                      placeholder="https://your-webhook.url"
+                      required
+                    />
+                    <div className="space-y-1">
+                      <label className="text-[0.625rem] font-mono font-bold uppercase tracking-widest text-archival-fg">JSON Payload Template</label>
+                      <textarea
+                        value={act.payload || ""}
+                        onChange={(e) => {
+                          const newActs = [...formData.actions];
+                          newActs[index].payload = e.target.value;
+                          setFormData({ ...formData, actions: newActs });
+                        }}
+                        className="w-full bg-archival-bg border border-archival-muted p-4 text-sm font-mono text-archival-fg min-h-[100px] resize-y focus:outline-none focus:border-archival-accent focus:ring-1 focus:ring-archival-accent transition-all rounded-[6px]"
+                        placeholder={'{\n  "message": "Temperature is {{living-room-temp}}"\n}'}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <Input 
+                    label="Delay in Milliseconds"
+                    type="number"
+                    value={act.delayMs?.toString() || "0"}
+                    onChange={(e) => {
+                      const newActs = [...formData.actions];
+                      newActs[index].delayMs = parseInt(e.target.value) || 0;
+                      setFormData({ ...formData, actions: newActs });
+                    }}
+                    placeholder="e.g. 5000"
+                    required
+                  />
+                )}
+              </div>
+            )})}
+            
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => {
+                setFormData({ 
+                  ...formData, 
+                  actions: [...formData.actions, { type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "", isElse: true }] 
+                });
+              }}
+              className="w-full border-dashed opacity-70 hover:opacity-100"
+            >
+              <Plus className="w-4 h-4 mr-2" /> ADD ELSE ACTION
             </Button>
           </div>
 

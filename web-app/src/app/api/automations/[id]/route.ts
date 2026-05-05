@@ -68,6 +68,9 @@ export async function PATCH(
               feedKey: a.feedKey || null,
               value: a.value || null,
               delayMs: a.delayMs ? parseInt(a.delayMs) : 0,
+              targetUrl: a.targetUrl || null,
+              payload: a.payload || null,
+              isElse: a.isElse || false,
               order: index
             }))
           });

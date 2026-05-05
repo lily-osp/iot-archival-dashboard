@@ -198,8 +198,8 @@ export default function DocsPage() {
                   <p className="text-[0.75rem]">Performs mathematical (&gt;, &lt;, ==) or string comparisons locally with zero reliance on cloud computing.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
-                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. SEQUENTIAL TRIGGER</div>
-                  <p className="text-[0.75rem]">Dispatches an array of actions. Actions can publish a new payload, wait via delays, or trigger webhooks.</p>
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. IF/ELSE TRIGGERS</div>
+                  <p className="text-[0.75rem]">Dispatches arrays of actions based on condition evaluation. Supports sequential delays, adafruit publishes, and webhooks for both IF (True) and ELSE (False) outcomes.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">4. WEBHOOK DISPATCH</div>

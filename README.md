@@ -20,7 +20,8 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
   - Supports 1-to-1, 1-to-many, and many-to-many logic pipelines.
   - Multi-condition trigger support (`MATCH ALL` / `MATCH ANY`).
   - Mathematical and string evaluations (`>`, `<`, `==`, `!=`, `>=`, `<=`) running locally for ultra-low latency.
-    - Sequential action execution with configurable delays between steps.
+  - **IF/ELSE Logic Branches**: Consolidate paired actions into a single rule. Run primary actions when conditions are met, and "Else Actions" when conditions fall false (e.g. Turn lights ON at 6 PM, ELSE turn them OFF).
+  - Sequential action execution with configurable delays between steps.
     - **Manual Override (Force Run)**: Instantly execute any automation rule's action chain directly from the dashboard UI for rapid testing.
     - **Webhook Dispatch**: Trigger external APIs via POST with payload interpolation using `{{feedKey}}`.
   - **Cross-Account Automations**: Trigger rules on an event from one Adafruit IO account, evaluate conditions against feeds from another, and publish actions to a third.

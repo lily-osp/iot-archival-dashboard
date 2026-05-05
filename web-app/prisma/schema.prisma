@@ -109,6 +109,7 @@ model AutomationAction {
   targetUrl    String?
   payload      String?
   order        Int        @default(0)
+  isElse       Boolean    @default(false)
   automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
   automationId String
 }

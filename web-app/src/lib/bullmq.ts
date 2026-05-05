@@ -67,10 +67,12 @@ export const automationWorker = new Worker(
           ? conditionsMet > 0 
           : conditionsMet === rule.conditions.length);
 
-      if (isTriggered) {
-        console.log(`System Archive: Rule [${rule.name}] triggered. Executing ${rule.actions.length} actions.`);
+      const actionsToRun = isTriggered ? rule.actions.filter((a: any) => !a.isElse) : rule.actions.filter((a: any) => a.isElse);
 
-        for (const action of rule.actions) {
+      if (actionsToRun.length > 0) {
+        console.log(`System Archive: Rule [${rule.name}] evaluated (${isTriggered ? 'TRUE' : 'FALSE'}). Executing ${actionsToRun.length} actions.`);
+
+        for (const action of actionsToRun) {
           if (action.type === "delay") {
             console.log(`System Archive: Delaying for ${action.delayMs}ms`);
             await new Promise((resolve) => setTimeout(resolve, action.delayMs || 0));
@@ -265,10 +267,13 @@ export const openDataWorker = new Worker(
               ? conditionsMet > 0 
               : conditionsMet === rule.conditions.length;
 
-            if (isTriggered && rule.conditions.length > 0) {
-              console.log(`System Archive: Rule [${rule.name}] triggered by Virtual Feed. Executing ${rule.actions.length} actions.`);
+            if (rule.conditions.length > 0) {
+              const actionsToRun = isTriggered ? rule.actions.filter((a: any) => !a.isElse) : rule.actions.filter((a: any) => a.isElse);
               
-              for (const action of rule.actions) {
+              if (actionsToRun.length > 0) {
+                console.log(`System Archive: Rule [${rule.name}] evaluated by Virtual Feed (${isTriggered ? 'TRUE' : 'FALSE'}). Executing ${actionsToRun.length} actions.`);
+                
+                for (const action of actionsToRun) {
                 if (action.type === "delay") {
                   await new Promise(resolve => setTimeout(resolve, action.delayMs || 0));
                 } else if (action.type === "publish" && action.feedKey) {

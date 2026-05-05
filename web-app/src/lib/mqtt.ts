@@ -111,10 +111,13 @@ export function connectAccountMqtt(accountId: string, username: string, key: str
               ? conditionsMet > 0 
               : conditionsMet === rule.conditions.length;
 
-            if (isTriggered && rule.conditions.length > 0) {
-              console.log(`System Archive: Rule [${rule.name}] triggered. Executing ${rule.actions.length} actions.`);
-              
-              for (const action of rule.actions) {
+            if (rule.conditions.length > 0) {
+              const actionsToRun = isTriggered ? rule.actions.filter((a: any) => !a.isElse) : rule.actions.filter((a: any) => a.isElse);
+
+              if (actionsToRun.length > 0) {
+                console.log(`System Archive: Rule [${rule.name}] evaluated (${isTriggered ? 'TRUE' : 'FALSE'}). Executing ${actionsToRun.length} actions.`);
+                
+                for (const action of actionsToRun) {
                 if (action.type === "delay") {
                   console.log(`System Archive: Delaying for ${action.delayMs}ms`);
                   await new Promise(resolve => setTimeout(resolve, action.delayMs || 0));
