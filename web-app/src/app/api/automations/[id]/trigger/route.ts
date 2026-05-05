@@ -24,9 +24,10 @@ export async function POST(
 
     console.log(`System Archive: Force Manual Run for Rule [${rule.name}]. Executing ${rule.actions.length} actions.`);
 
-    // Execute actions sequentially
+    // Execute primary actions sequentially
     const { executeActions } = await import("@/lib/actionEngine");
-    await executeActions(rule.actions, 0);
+    const primaryActions = rule.actions.filter((a: any) => !a.isElse);
+    await executeActions(primaryActions, 0);
 
     return NextResponse.json({ success: true, message: "Automation triggered successfully." });
   } catch (error: any) {
