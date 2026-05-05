@@ -25,7 +25,7 @@ export default function AutomationsPage() {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     conditionMatch: "ALL",
     conditions: [{ feedKey: "", operator: "==", value: "" }],
-    actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
+    actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "" }],
     isActive: true
   });
 
@@ -96,7 +96,7 @@ export default function AutomationsPage() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       conditionMatch: "ALL",
       conditions: [{ feedKey: "", operator: "==", value: "" }],
-      actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0 }],
+      actions: [{ type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "" }],
       isActive: true 
     });
     setIsModalOpen(true);
@@ -628,7 +628,7 @@ export default function AutomationsPage() {
               onClick={() => {
                 setFormData({ 
                   ...formData, 
-                  actions: [...formData.actions, { type: "publish", feedKey: "", value: "", delayMs: 0 }] 
+                  actions: [...formData.actions, { type: "publish", feedKey: "", value: "", delayMs: 0, targetUrl: "", payload: "" }] 
                 });
               }}
               className="w-full border-dashed"
