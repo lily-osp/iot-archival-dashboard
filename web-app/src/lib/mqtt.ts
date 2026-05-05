@@ -153,11 +153,12 @@ export function connectAccountMqtt(accountId: string, username: string, key: str
               }
             }
           }
-        } catch(err) {
-          console.error("System Archive: Rule Evaluation Error:", err);
         }
+      } catch(err) {
+        console.error("System Archive: Rule Evaluation Error:", err);
       }
-    });
+    }
+  });
 
     client.on("error", (err) => {
       if (err.message.includes("Connection refused")) {

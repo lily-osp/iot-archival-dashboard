@@ -304,11 +304,10 @@ export const openDataWorker = new Worker(
               }
             }
           }
-        } catch(err) {
-          console.error("System Archive: Rule Evaluation Error from Virtual Feed:", err);
         }
+      } catch(err) {
+        console.error("System Archive: Rule Evaluation Error from Virtual Feed:", err);
       }
-
     } catch (err: any) {
       console.error(`System Archive: Open Data Fetch Error [${sourceId}]:`, err.message);
     }
