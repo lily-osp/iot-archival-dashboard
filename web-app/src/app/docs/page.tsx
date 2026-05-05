@@ -97,6 +97,15 @@ export default function DocsPage() {
               <p className="mb-6">
                 These sources are configured using a target URL and a JSON path extractor (e.g., <code className="bg-archival-bg px-1 border border-archival-muted">current.temperature_2m</code>). The system's background BullMQ worker periodically polls the API on a standard CRON schedule.
               </p>
+              <div className="p-6 border border-archival-muted/50 rounded-[6px] bg-archival-surface mb-6">
+                <h3 className="text-[0.875rem] font-bold tracking-[0.05em] uppercase text-archival-accent mb-4">Bundled Open Source Examples</h3>
+                <ul className="space-y-3 text-[0.875rem] font-sans text-archival-muted-fg">
+                  <li><strong className="text-archival-fg">Lamongan Temperature:</strong> Uses <code className="font-mono text-[0.75rem]">Open-Meteo</code> to fetch live local temperature tracking.</li>
+                  <li><strong className="text-archival-fg">Current Time (Jakarta):</strong> Uses <code className="font-mono text-[0.75rem]">timeapi.io</code> to generate real-time timestamps bypassing NTP reliance.</li>
+                  <li><strong className="text-archival-fg">Bitcoin Price (USD):</strong> Uses <code className="font-mono text-[0.75rem]">CoinGecko</code> API to natively graph cryptocurrency charts.</li>
+                  <li><strong className="text-archival-fg">ISS Current Latitude:</strong> Uses <code className="font-mono text-[0.75rem]">Open-Notify</code> tracking the International Space Station.</li>
+                </ul>
+              </div>
               <p>
                 Virtual Feeds can either seamlessly bind directly to a widget on the dashboard via local Redis pub/sub—behaving identically to hardware data—or automatically route their parsed values upstream to an existing Adafruit IO feed for cloud logging.
               </p>

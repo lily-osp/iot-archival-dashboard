@@ -27,6 +27,11 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
   - Poll unauthenticated, external APIs (e.g. weather, crypto, transit) natively via BullMQ workers.
   - Extracted values (via JSONPath) are cached in Redis and treated identically to Adafruit IO hardware feeds.
   - Create dashboards and trigger automations solely from Open Data without needing cloud storage, or optionally route them to an Adafruit IO feed.
+  - **Bundled Examples Included via Seed:**
+    - `Lamongan Temperature`: Localized weather data via Open-Meteo.
+    - `Current Time (Jakarta)`: Real-time timezone synchronization via timeapi.io.
+    - `Bitcoin USD Price`: Live cryptocurrency ticker via CoinGecko.
+    - `ISS Current Latitude`: Space station tracking via Open-Notify.
 - **Multi-Account Aggregation Hub**:
   - Connect and manage multiple Adafruit IO accounts simultaneously.
   - Bypass free-tier feed limits by aggregating feeds from several accounts into one unified dashboard.
