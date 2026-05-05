@@ -36,6 +36,7 @@ export default function DocsPage() {
             <ul className="space-y-4 text-[0.875rem] font-sans font-medium text-archival-muted-fg">
               <li><a href="#concept" className="hover:text-archival-accent transition-colors">Core Concept</a></li>
               <li><a href="#multi-account" className="hover:text-archival-accent transition-colors">Multi-Account Hub</a></li>
+              <li><a href="#open-data" className="hover:text-archival-accent transition-colors">Virtual Feeds (Open Data)</a></li>
               <li><a href="#specimens" className="hover:text-archival-accent transition-colors">Specimen Types</a></li>
               <li><a href="#provisioning" className="hover:text-archival-accent transition-colors">Auto-Provisioning</a></li>
               <li><a href="#logic-matrix" className="hover:text-archival-accent transition-colors">Logic Matrix</a></li>
@@ -78,6 +79,26 @@ export default function DocsPage() {
               </p>
               <p>
                 <strong className="text-archival-accent">Cross-Account Automation:</strong> Because all data is aggregated locally, the Logic Matrix can bridge accounts. You can trigger an automation based on a sensor from Account A, evaluate conditions against a feed in Account B, and execute actions to control a relay on Account C—all seamlessly without manual routing.
+              </p>
+            </div>
+          </section>
+
+          <div className="border-t border-archival-muted/20" />
+
+          <section id="open-data" className="scroll-mt-12">
+            <div className="flex items-center gap-4 mb-6">
+              <Database className="w-6 h-6 text-archival-accent" />
+              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">Virtual Feeds (Open Data Integration)</h2>
+            </div>
+            <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
+              <p className="mb-6">
+                The dashboard can poll unauthenticated, external APIs (like weather APIs, cryptocurrency trackers, or public transport data) and integrate them natively as <strong className="text-archival-accent">Virtual Feeds</strong>.
+              </p>
+              <p className="mb-6">
+                These sources are configured using a target URL and a JSON path extractor (e.g., <code className="bg-archival-bg px-1 border border-archival-muted">current.temperature_2m</code>). The system's background BullMQ worker periodically polls the API on a standard CRON schedule.
+              </p>
+              <p>
+                Virtual Feeds can either seamlessly bind directly to a widget on the dashboard via local Redis pub/sub—behaving identically to hardware data—or automatically route their parsed values upstream to an existing Adafruit IO feed for cloud logging.
               </p>
             </div>
           </section>
@@ -157,7 +178,7 @@ export default function DocsPage() {
                 <strong className="text-archival-accent">Advanced Capability:</strong> Time-based rules can optionally include Condition limits. Before the schedule executes its actions, it queries the local Redis cache for the latest feed states. If the conditions (e.g., <code>temperature &gt; 30</code>) are not met at the exact time of the schedule, the execution is gracefully skipped.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 mt-12">
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">1. LISTEN & MATCH</div>
                   <p className="text-[0.75rem]">Subscribes to multiple feeds or cron schedules. Combine conditions using "MATCH ALL" or "MATCH ANY" operators.</p>
@@ -168,7 +189,11 @@ export default function DocsPage() {
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. SEQUENTIAL TRIGGER</div>
-                  <p className="text-[0.75rem]">Dispatches an array of actions. Actions can either publish a new payload or wait via configured delays.</p>
+                  <p className="text-[0.75rem]">Dispatches an array of actions. Actions can publish a new payload, wait via delays, or trigger webhooks.</p>
+                </div>
+                <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">4. WEBHOOK DISPATCH</div>
+                  <p className="text-[0.75rem]">Trigger an external API via POST. Payloads support <code className="bg-archival-surface px-1">{"{{feedKey}}"}</code> interpolation to route live values dynamically.</p>
                 </div>
               </div>
             </div>
