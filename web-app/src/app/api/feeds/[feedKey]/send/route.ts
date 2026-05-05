@@ -14,6 +14,13 @@ export async function POST(
   try {
     const { value } = await request.json();
 
+    if (feedKey.startsWith("open_")) {
+      // It's a virtual feed, just publish to Redis and don't send to Adafruit IO
+      await redis.publish(`feed:${feedKey}`, value);
+      await redis.set(`last:${feedKey}`, value);
+      return NextResponse.json({ id: `virt_${Date.now()}`, value, created_at: new Date().toISOString() });
+    }
+
     // Send to Adafruit IO
     const result = await sendFeedData(feedKey, value);
     
