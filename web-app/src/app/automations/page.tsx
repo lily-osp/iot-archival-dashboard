@@ -292,6 +292,12 @@ export default function AutomationsPage() {
                         <span>WAIT</span>
                         <span className="font-bold text-archival-fg">{act.delayMs}ms</span>
                       </>
+                    ) : act.type === "webhook" ? (
+                      <>
+                        <Activity className="w-3 h-3 text-archival-accent" />
+                        <span>WEBHOOK</span>
+                        <span className="font-bold text-archival-fg break-all">{act.targetUrl}</span>
+                      </>
                     ) : (
                       <>
                         <span>SET</span>
@@ -538,7 +544,8 @@ export default function AutomationsPage() {
                   }}
                   options={[
                     { value: "publish", label: "PUBLISH TO FEED" },
-                    { value: "delay", label: "WAIT (DELAY)" }
+                    { value: "delay", label: "WAIT (DELAY)" },
+                    { value: "webhook", label: "TRIGGER WEBHOOK" }
                   ]}
                   required
                 />
@@ -568,6 +575,35 @@ export default function AutomationsPage() {
                       placeholder="e.g. ON or 1"
                       required
                     />
+                  </>
+                ) : act.type === "webhook" ? (
+                  <>
+                    <Input 
+                      label="Target URL"
+                      type="url"
+                      value={act.targetUrl || ""}
+                      onChange={(e) => {
+                        const newActs = [...formData.actions];
+                        newActs[index].targetUrl = e.target.value;
+                        setFormData({ ...formData, actions: newActs });
+                      }}
+                      placeholder="https://your-webhook.url"
+                      required
+                    />
+                    <div className="space-y-1">
+                      <label className="text-[0.625rem] font-mono font-bold uppercase tracking-widest text-archival-fg">JSON Payload Template</label>
+                      <textarea
+                        value={act.payload || ""}
+                        onChange={(e) => {
+                          const newActs = [...formData.actions];
+                          newActs[index].payload = e.target.value;
+                          setFormData({ ...formData, actions: newActs });
+                        }}
+                        className="w-full bg-archival-bg border border-archival-muted p-4 text-sm font-mono text-archival-fg min-h-[100px] resize-y focus:outline-none focus:border-archival-accent focus:ring-1 focus:ring-archival-accent transition-all rounded-[6px]"
+                        placeholder={'{\n  "message": "Temperature is {{living-room-temp}}"\n}'}
+                      />
+                      <p className="text-[0.625rem] font-sans text-archival-muted-fg">Use {'{{feedKey}}'} to interpolate live values.</p>
+                    </div>
                   </>
                 ) : (
                   <Input 

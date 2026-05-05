@@ -68,7 +68,19 @@ export async function GET() {
     const uniqueFeeds = Array.from(new Map(allFeeds.map(item => [item.key, item])).values())
       .filter(f => !f.key.startsWith("demo_"));
 
-    return NextResponse.json(uniqueFeeds);
+    // Add Open Data Virtual Feeds
+    const openDataSources = await prisma.openDataSource.findMany({
+      where: { targetFeedKey: null } // Only unlinked sources act as virtual feeds
+    });
+    
+    const virtualFeeds = openDataSources.map(s => ({
+      key: `open_${s.id}`,
+      name: s.name,
+      last_value: "Pending",
+      accountName: "OPEN DATA SOURCE",
+    }));
+
+    return NextResponse.json([...uniqueFeeds, ...virtualFeeds]);
   } catch (error) {
     console.error("Error fetching feeds:", error);
     return NextResponse.json({ error: "Failed to fetch feeds" }, { status: 500 });

@@ -66,6 +66,17 @@ model FeedConfig {
   updatedAt   DateTime    @updatedAt
 }
 
+model OpenDataSource {
+  id            String   @id @default(cuid())
+  name          String
+  url           String
+  jsonPath      String
+  scheduleCron  String
+  targetFeedKey String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model Automation {
   id                String             @id @default(cuid())
   name              String
@@ -91,10 +102,12 @@ model AutomationCondition {
 
 model AutomationAction {
   id           String     @id @default(cuid())
-  type         String     @default("publish") // "publish" or "delay"
+  type         String     @default("publish") // "publish", "delay", or "webhook"
   feedKey      String?
   value        String?
   delayMs      Int?       @default(0)
+  targetUrl    String?
+  payload      String?
   order        Int        @default(0)
   automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
   automationId String

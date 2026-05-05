@@ -126,6 +126,26 @@ export function connectAccountMqtt(accountId: string, username: string, key: str
                       console.error(`System Archive: Automation Action [${action.feedKey}] Failed:`, e.message);
                     });
                   }
+                } else if (action.type === "webhook" && action.targetUrl) {
+                  try {
+                    let parsedPayload = action.payload || "";
+                    const matches = parsedPayload.match(/\{\{([^}]+)\}\}/g);
+                    if (matches) {
+                      for (const match of matches) {
+                        const key = match.replace(/\{\{|\}\}/g, "");
+                        const val = await redis.get(`last:${key}`);
+                        parsedPayload = parsedPayload.replace(match, val || "");
+                      }
+                    }
+                    console.log(`System Archive: Triggering Webhook: ${action.targetUrl}`);
+                    await fetch(action.targetUrl, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: parsedPayload
+                    });
+                  } catch (e: any) {
+                    console.error(`System Archive: Webhook Failed:`, e.message);
+                  }
                 }
               }
             }

@@ -80,6 +80,26 @@ export const automationWorker = new Worker(
             await sendFeedData(action.feedKey, action.value!).catch((e) => {
               console.error(`System Archive: Automation Action [${action.feedKey}] Failed:`, e.message);
             });
+          } else if (action.type === "webhook" && action.targetUrl) {
+            try {
+              let parsedPayload = action.payload || "";
+              const matches = parsedPayload.match(/\{\{([^}]+)\}\}/g);
+              if (matches) {
+                for (const match of matches) {
+                  const key = match.replace(/\{\{|\}\}/g, "");
+                  const val = await redis.get(`last:${key}`);
+                  parsedPayload = parsedPayload.replace(match, val || "");
+                }
+              }
+              console.log(`System Archive: Triggering Webhook: ${action.targetUrl}`);
+              await fetch(action.targetUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: parsedPayload
+              });
+            } catch (e: any) {
+              console.error(`System Archive: Webhook Failed:`, e.message);
+            }
           }
         }
       } else {
@@ -147,3 +167,192 @@ export async function syncAllTimeBasedAutomations() {
     await upsertRepeatableJob(auto);
   }
 }
+
+// Queue for open data fetching
+export const openDataQueue = new Queue("openData", {
+  connection: redisConnection,
+});
+
+// Simple JSON path extractor (e.g. "current.temperature_2m")
+function extractValue(obj: any, path: string): any {
+  if (!path) return JSON.stringify(obj);
+  return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+}
+
+// Worker to fetch open data
+export const openDataWorker = new Worker(
+  "openData",
+  async (job) => {
+    const { sourceId } = job.data;
+    try {
+      const source = await prisma.openDataSource.findUnique({
+        where: { id: sourceId }
+      });
+
+      if (!source) {
+        console.log(`System Archive: OpenDataSource [${sourceId}] not found. Skipping.`);
+        return;
+      }
+
+      console.log(`System Archive: Fetching Open Data: ${source.name} from ${source.url}`);
+      const res = await fetch(source.url);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      
+      const data = await res.json();
+      let value = extractValue(data, source.jsonPath);
+      
+      if (typeof value === 'object') {
+        value = JSON.stringify(value);
+      } else {
+        value = String(value);
+      }
+
+      if (source.targetFeedKey) {
+        const { sendFeedData } = await import("./adafruit");
+        console.log(`System Archive: Routing Open Data [${source.name}] -> Adafruit IO [${source.targetFeedKey}]: ${value}`);
+        await sendFeedData(source.targetFeedKey, value).catch(e => {
+          console.error(`System Archive: Open Data Push Failed:`, e.message);
+        });
+      } else {
+        // Treat as a dedicated virtual feed
+        const virtualKey = `open_${source.id}`;
+        console.log(`System Archive: Routing Open Data [${source.name}] -> Virtual Feed [${virtualKey}]: ${value}`);
+        redis.publish(`feed:${virtualKey}`, value);
+        redis.set(`last:${virtualKey}`, value);
+
+        // Evaluate automations manually for this virtual feed
+        try {
+          const automations = await prisma.automation.findMany({
+            where: { 
+              isActive: true,
+              conditions: { some: { feedKey: virtualKey } }
+            },
+            include: { 
+              conditions: true,
+              actions: { orderBy: { order: 'asc' } }
+            }
+          });
+          
+          for (const rule of automations) {
+            let conditionsMet = 0;
+            for (const cond of rule.conditions) {
+              const currentValStr = cond.feedKey === virtualKey ? value : await redis.get(`last:${cond.feedKey}`);
+              if (currentValStr === null) continue;
+              
+              let triggered = false;
+              const msgVal = parseFloat(currentValStr);
+              const condVal = parseFloat(cond.value);
+              
+              if (!isNaN(msgVal) && !isNaN(condVal)) {
+                switch (cond.operator) {
+                  case '>': triggered = msgVal > condVal; break;
+                  case '<': triggered = msgVal < condVal; break;
+                  case '>=': triggered = msgVal >= condVal; break;
+                  case '<=': triggered = msgVal <= condVal; break;
+                  case '==': triggered = msgVal === condVal; break;
+                  case '!=': triggered = msgVal !== condVal; break;
+                }
+              } else {
+                switch (cond.operator) {
+                  case '==': triggered = currentValStr === cond.value; break;
+                  case '!=': triggered = currentValStr !== cond.value; break;
+                }
+              }
+              if (triggered) conditionsMet++;
+            }
+
+            const isTriggered = rule.conditionMatch === "ANY" 
+              ? conditionsMet > 0 
+              : conditionsMet === rule.conditions.length;
+
+            if (isTriggered && rule.conditions.length > 0) {
+              console.log(`System Archive: Rule [${rule.name}] triggered by Virtual Feed. Executing ${rule.actions.length} actions.`);
+              
+              for (const action of rule.actions) {
+                if (action.type === "delay") {
+                  await new Promise(resolve => setTimeout(resolve, action.delayMs || 0));
+                } else if (action.type === "publish" && action.feedKey) {
+                  const { sendFeedData } = await import("./adafruit");
+                  await sendFeedData(action.feedKey, action.value!).catch(e => {
+                    console.error(`System Archive: Automation Action [${action.feedKey}] Failed:`, e.message);
+                  });
+                } else if (action.type === "webhook" && action.targetUrl) {
+                  try {
+                    let parsedPayload = action.payload || "";
+                    const matches = parsedPayload.match(/\{\{([^}]+)\}\}/g);
+                    if (matches) {
+                      for (const match of matches) {
+                        const key = match.replace(/\{\{|\}\}/g, "");
+                        const val = await redis.get(`last:${key}`);
+                        parsedPayload = parsedPayload.replace(match, val || "");
+                      }
+                    }
+                    await fetch(action.targetUrl, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: parsedPayload
+                    });
+                  } catch (e: any) {
+                    console.error(`System Archive: Webhook Failed:`, e.message);
+                  }
+                }
+              }
+            }
+          }
+        } catch(err) {
+          console.error("System Archive: Rule Evaluation Error from Virtual Feed:", err);
+        }
+      }
+
+    } catch (err: any) {
+      console.error(`System Archive: Open Data Fetch Error [${sourceId}]:`, err.message);
+    }
+  },
+  {
+    connection: redisConnection,
+  }
+);
+
+openDataWorker.on("failed", (job, err) => {
+  console.error(`System Archive: Open Data Job ${job?.id} failed with ${err.message}`);
+});
+
+export async function removeOpenDataJob(sourceId: string) {
+  const repeatableJobs = await openDataQueue.getRepeatableJobs();
+  const jobToRemove = repeatableJobs.find((job) => job.name === `open-data-${sourceId}`);
+  if (jobToRemove) {
+    await openDataQueue.removeRepeatableByKey(jobToRemove.key);
+  }
+}
+
+export async function upsertOpenDataJob(source: any) {
+  await removeOpenDataJob(source.id);
+  if (source.scheduleCron) {
+    await openDataQueue.add(
+      `open-data-${source.id}`,
+      { sourceId: source.id },
+      {
+        repeat: {
+          pattern: source.scheduleCron,
+          tz: "UTC", // Open data generally polls on UTC schedule
+        },
+      }
+    );
+    console.log(`System Archive: Registered schedule for Open Data [${source.name}]: ${source.scheduleCron}`);
+  }
+}
+
+export async function syncOpenDataJobs() {
+  console.log("System Archive: Syncing Open Data sources with BullMQ...");
+  const sources = await prisma.openDataSource.findMany();
+
+  const repeatableJobs = await openDataQueue.getRepeatableJobs();
+  for (const job of repeatableJobs) {
+    await openDataQueue.removeRepeatableByKey(job.key);
+  }
+
+  for (const source of sources) {
+    await upsertOpenDataJob(source);
+  }
+}
+

@@ -1,7 +1,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { getMqttClient } = await import("./lib/mqtt");
-    const { syncAllTimeBasedAutomations } = await import("./lib/bullmq");
+    const { syncAllTimeBasedAutomations, syncOpenDataJobs } = await import("./lib/bullmq");
     const prisma = (await import("./lib/prisma")).default;
 
     // Data Migration for Multi-Account
@@ -38,6 +38,7 @@ export async function register() {
       await getMqttClient();
       console.log("System Archive: MQTT Listener Initialized.");
       await syncAllTimeBasedAutomations();
+      await syncOpenDataJobs();
       console.log("System Archive: BullMQ Worker Initialized.");
     } catch (err) {
       console.error("System Archive: Failed to initialize background services:", err);
