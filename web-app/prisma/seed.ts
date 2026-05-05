@@ -40,10 +40,28 @@ async function main() {
       scheduleCron: "*/5 * * * *",
     },
     {
+      name: "Ethereum USD Price (CoinGecko)",
+      url: "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+      jsonPath: "ethereum.usd",
+      scheduleCron: "*/5 * * * *",
+    },
+    {
       name: "ISS Current Latitude",
       url: "http://api.open-notify.org/iss-now.json",
       jsonPath: "iss_position.latitude",
       scheduleCron: "* * * * *",
+    },
+    {
+      name: "Latest Earthquake Magnitude (USGS)",
+      url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson",
+      jsonPath: "features.0.properties.mag",
+      scheduleCron: "*/15 * * * *",
+    },
+    {
+      name: "Random Programming Joke (JokeAPI)",
+      url: "https://v2.jokeapi.dev/joke/Programming?safe-mode&type=single",
+      jsonPath: "joke",
+      scheduleCron: "0 * * * *",
     }
   ];
 

@@ -105,7 +105,10 @@ export default function DocsPage() {
                   <li><strong className="text-archival-fg">Lamongan Temperature:</strong> Uses <code className="font-mono text-[0.75rem]">Open-Meteo</code> to fetch live local temperature tracking.</li>
                   <li><strong className="text-archival-fg">Current Time (Jakarta):</strong> Uses <code className="font-mono text-[0.75rem]">timeapi.io</code> to generate real-time timestamps bypassing NTP reliance.</li>
                   <li><strong className="text-archival-fg">Bitcoin Price (USD):</strong> Uses <code className="font-mono text-[0.75rem]">CoinGecko</code> API to natively graph cryptocurrency charts.</li>
+                  <li><strong className="text-archival-fg">Ethereum Price (USD):</strong> Uses <code className="font-mono text-[0.75rem]">CoinGecko</code> API to track alternative crypto assets.</li>
                   <li><strong className="text-archival-fg">ISS Current Latitude:</strong> Uses <code className="font-mono text-[0.75rem]">Open-Notify</code> tracking the International Space Station.</li>
+                  <li><strong className="text-archival-fg">Latest Earthquake Magnitude:</strong> Uses <code className="font-mono text-[0.75rem]">USGS</code> API to track recent global seismic activity.</li>
+                  <li><strong className="text-archival-fg">Random Programming Joke:</strong> Uses <code className="font-mono text-[0.75rem]">JokeAPI</code> to fetch technical humor on an hourly schedule.</li>
                 </ul>
               </div>
               <p>
