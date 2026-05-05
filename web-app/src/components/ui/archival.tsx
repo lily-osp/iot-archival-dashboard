@@ -68,7 +68,8 @@ export function MuseumLabel({
   return (
     <div className={cn(
       "border border-archival-muted p-6 bg-archival-surface rounded-[6px] animate-entrance relative group transition-all duration-[225ms] ease-[cubic-bezier(0.65,0,0.35,1)] hover:border-archival-accent hover:-translate-y-[2px] flex flex-col", 
-      type === "chart" || type === "dump" || type === "stream" ? "col-span-1 md:col-span-2 row-span-1 h-[350px]" : "h-full min-h-[220px]",
+      type === "chart" || type === "dump" ? "col-span-1 md:col-span-2 row-span-1 h-[350px]" : 
+      type === "stream" ? "col-span-1 md:col-span-2 row-span-1 min-h-[220px]" : "h-full min-h-[220px]",
       className
     )}>
       {/* Component Header Metadata */}
@@ -259,7 +260,7 @@ export function MuseumLabel({
         {type === "stream" && (
           <div className="flex flex-col h-full bg-[rgba(240,237,228,0.5)] border border-archival-muted rounded-[6px] overflow-hidden">
             <div className="flex-1 p-4 overflow-y-auto font-mono text-[0.75rem] flex flex-col gap-2">
-              {history.map((d, i) => (
+              {history.slice(0, 5).map((d, i) => (
                 <div key={i} className="flex gap-4 text-archival-fg border-b border-archival-muted/20 pb-2 last:border-0 last:pb-0">
                   <span className="text-archival-muted-fg shrink-0 opacity-60 w-[60px]">
                     {new Date(d.created_at).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
