@@ -205,6 +205,10 @@ export default function DocsPage() {
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">4. WEBHOOK DISPATCH</div>
                   <p className="text-[0.75rem]">Trigger an external API via POST. Payloads support <code className="bg-archival-surface px-1">{"{{feedKey}}"}</code> interpolation to route live values dynamically.</p>
                 </div>
+                <div className="p-4 border border-archival-muted rounded bg-archival-bg/30 md:col-span-2">
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">5. MANUAL OVERRIDE (FORCE RUN)</div>
+                  <p className="text-[0.75rem]">Instantly execute any automation rule's action chain directly from the dashboard UI for rapid testing and immediate feedback.</p>
+                </div>
               </div>
             </div>
           </section>

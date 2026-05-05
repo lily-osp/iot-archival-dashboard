@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Shell, Button, Modal, Input, Select, Switch, ConfirmationModal, toast, cn } from "@/components/ui/archival";
-import { Plus, RefreshCcw, ArrowLeft, Trash2, Activity, Zap, X, Clock } from "lucide-react";
+import { Plus, RefreshCcw, ArrowLeft, Trash2, Activity, Zap, X, Clock, Play } from "lucide-react";
 import Link from "next/link";
 
 export default function AutomationsPage() {
@@ -182,6 +182,21 @@ export default function AutomationsPage() {
     }
   };
 
+  const handleForceRun = async (ruleId: string) => {
+    toast.success("INITIATING_MANUAL_OVERRIDE...");
+    try {
+      const res = await fetch(`/api/automations/${ruleId}/trigger`, { method: "POST" });
+      if (res.ok) {
+        toast.success("MANUAL_OVERRIDE_EXECUTED");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "OVERRIDE_FAILURE");
+      }
+    } catch (err) {
+      toast.error("NETWORK_TRANSPORT_ERROR");
+    }
+  };
+
   const feedOptions = [
     { value: "", label: "SELECT_FEED..." },
     ...discoveredFeeds.map(feed => ({ 
@@ -242,11 +257,17 @@ export default function AutomationsPage() {
                     RULE_ID: {rule.id.slice(0,8).toUpperCase()}
                   </span>
                 </div>
-                <div 
-                  className="shrink-0 ml-4"
-                  onClick={(e) => { e.stopPropagation(); toggleStatus(rule); }}
-                >
-                  <Switch checked={rule.isActive} onChange={() => {}} />
+                <div className="shrink-0 ml-4 flex items-center gap-3">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleForceRun(rule.id); }}
+                    className="p-1.5 text-archival-accent hover:bg-archival-accent hover:text-white rounded transition-all border border-archival-accent/20 bg-archival-bg"
+                    title="Force Run (Manual Override)"
+                  >
+                    <Play className="w-4 h-4 ml-0.5" />
+                  </button>
+                  <div onClick={(e) => { e.stopPropagation(); toggleStatus(rule); }}>
+                    <Switch checked={rule.isActive} onChange={() => {}} />
+                  </div>
                 </div>
               </div>
 

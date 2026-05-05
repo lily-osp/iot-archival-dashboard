@@ -10,7 +10,12 @@ export default async function middleware(req: NextRequest) {
   const isPublicRoute = publicRoutes.includes(path);
 
   const cookie = req.cookies.get("session")?.value;
-  const session = cookie ? await decrypt(cookie).catch(() => null) : null;
+  const session = cookie ? await decrypt(cookie).catch((err) => {
+    console.error("Middleware decrypt error:", err.message);
+    return null;
+  }) : null;
+
+  console.log(`Middleware path: ${path}, isProtected: ${isProtectedRoute}, sessionValid: ${!!session}, cookiePresent: ${!!cookie}`);
 
   if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
