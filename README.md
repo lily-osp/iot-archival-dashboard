@@ -21,7 +21,12 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
   - Multi-condition trigger support (`MATCH ALL` / `MATCH ANY`).
   - Mathematical and string evaluations (`>`, `<`, `==`, `!=`, `>=`, `<=`) running locally for ultra-low latency.
   - Sequential action execution with configurable delays between steps.
+  - **Webhook Dispatch**: Trigger external APIs via POST with payload interpolation using `{{feedKey}}`.
   - **Cross-Account Automations**: Trigger rules on an event from one Adafruit IO account, evaluate conditions against feeds from another, and publish actions to a third.
+- **Virtual Feeds (Open Data Integration)**:
+  - Poll unauthenticated, external APIs (e.g. weather, crypto, transit) natively via BullMQ workers.
+  - Extracted values (via JSONPath) are cached in Redis and treated identically to Adafruit IO hardware feeds.
+  - Create dashboards and trigger automations solely from Open Data without needing cloud storage, or optionally route them to an Adafruit IO feed.
 - **Multi-Account Aggregation Hub**:
   - Connect and manage multiple Adafruit IO accounts simultaneously.
   - Bypass free-tier feed limits by aggregating feeds from several accounts into one unified dashboard.
