@@ -13,11 +13,30 @@ export async function GET() {
         // Fallback to fetch from environment if no accounts in DB but env has them
         const defaultFeeds = await fetchFeeds();
         feeds = [...defaultFeeds];
+        
+        const remoteKeys = defaultFeeds.map(f => f.key);
+        await prisma.feedConfig.deleteMany({
+          where: {
+            accountId: null,
+            key: { notIn: remoteKeys },
+            NOT: { key: { startsWith: "demo_" } }
+          }
+        });
       } else {
         for (const account of accounts) {
           try {
             const accFeeds = await fetchFeeds(account.id);
             feeds = [...feeds, ...accFeeds];
+
+            // Prune local SQLite feeds for THIS account that no longer exist on Adafruit IO
+            const remoteKeysForAcc = accFeeds.map(f => f.key);
+            await prisma.feedConfig.deleteMany({
+              where: {
+                accountId: account.id,
+                key: { notIn: remoteKeysForAcc },
+                NOT: { key: { startsWith: "demo_" } }
+              }
+            });
           } catch (err) {
             console.error(`Failed to fetch feeds for account ${account.name}`, err);
           }
@@ -39,17 +58,6 @@ export async function GET() {
             lastValue: feed.last_value,
             accountId: feed.accountId,
           },
-        });
-      }
-
-      // Prune local SQLite feeds that no longer exist on any Adafruit IO account
-      const remoteFeedKeys = feeds.map(f => f.key);
-      if (remoteFeedKeys.length > 0) {
-        await prisma.feedConfig.deleteMany({
-          where: {
-            key: { notIn: remoteFeedKeys },
-            NOT: { key: { startsWith: "demo_" } }
-          }
         });
       }
     } catch (e) {

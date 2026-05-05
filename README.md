@@ -35,7 +35,10 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
     - `Lamongan Temperature`: Localized weather data via Open-Meteo.
     - `Current Time (Jakarta)`: Real-time timezone synchronization via timeapi.io.
     - `Bitcoin USD Price`: Live cryptocurrency ticker via CoinGecko.
+    - `Ethereum USD Price`: Live cryptocurrency ticker via CoinGecko.
     - `ISS Current Latitude`: Space station tracking via Open-Notify.
+    - `Latest Earthquake Magnitude`: Tracking recent global earthquake magnitudes via USGS.
+    - `Random Programming Joke`: Random tech jokes fetched hourly via JokeAPI.
 - **Multi-Account Aggregation Hub**:
   - Connect and manage multiple Adafruit IO accounts simultaneously.
   - Bypass free-tier feed limits by aggregating feeds from several accounts into one unified dashboard.
