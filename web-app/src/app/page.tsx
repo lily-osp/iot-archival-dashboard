@@ -2,9 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { Shell, MuseumLabel, Button, Modal, Input, Select, ConfirmationModal, toast, cn } from "@/components/ui/archival";
-import { Plus, Settings, RefreshCcw, LogOut, User, Trash2, Edit3, Loader2, Zap } from "lucide-react";
+import { Plus, Settings, RefreshCcw, LogOut, User, Trash2, Zap, Move, Check, X as XIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function Home() {
   const [widgets, setWidgets] = useState<any[]>([]);
@@ -17,21 +35,23 @@ export default function Home() {
   const [editingWidget, setEditingWidget] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [widgetToDelete, setWidgetToDelete] = useState<string | null>(null);
+  const [isRearrangeMode, setIsRearrangeMode] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const router = useRouter();
 
-  // Form State
-  const [formData, setFormData] = useState({
-    label: "",
-    feedKey: "",
-    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream" | "color",
-    unit: "",
-    min: "0",
-    max: "255",
-    accountId: ""
-  });
-  const [isManualFeed, setIsManualFeed] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const fetchData = async () => {
+    if (isRearrangeMode) return;
     setIsLoading(true);
     try {
       const [userRes, widgetRes, settingsRes, feedRes, accountsRes] = await Promise.all([
@@ -52,12 +72,55 @@ export default function Home() {
         const title = settings.find((s: any) => s.key === "DASHBOARD_TITLE")?.value;
         if (title) setDashboardTitle(title);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
       toast.error("FAILED_TO_SYNC_ARCHIVE_DATA");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (over && active.id !== over.id) {
+      setWidgets((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const saveNewOrder = async () => {
+    setIsLoading(true);
+    try {
+      const orders = widgets.map((w, index) => ({ id: w.id, order: index }));
+      const res = await fetch("/api/widgets/reorder", {
+        method: "PUT",
+        body: JSON.stringify({ orders })
+      });
+      if (res.ok) {
+        toast.success("LAYOUT_COMMITTED_TO_ARCHIVE");
+        setIsRearrangeMode(false);
+      } else {
+        toast.error("FAILED_TO_COMMIT_LAYOUT");
+      }
+    } catch (_err) {
+      toast.error("NETWORK_TRANSPORT_ERROR");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cancelRearrange = () => {
+    setIsRearrangeMode(false);
+    fetchData(); // Reset to saved order
   };
 
   const handleOpenCreate = () => {
@@ -68,6 +131,7 @@ export default function Home() {
   };
 
   const handleOpenEdit = (widget: any) => {
+    if (isRearrangeMode) return;
     setEditingWidget(widget);
     setIsManualFeed(false);
     const settings = JSON.parse(widget.settings || "{}");
@@ -114,7 +178,7 @@ export default function Home() {
         const error = await res.json();
         toast.error(error.error || "COMMIT_FAILURE");
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error("NETWORK_TRANSPORT_ERROR");
     }
   };
@@ -137,7 +201,7 @@ export default function Home() {
         const error = await res.json();
         toast.error(error.error || "EXPUNGE_FAILURE");
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error("NETWORK_TRANSPORT_ERROR");
     }
   };
@@ -152,6 +216,18 @@ export default function Home() {
     fetchData();
   }, []);
 
+  // Form State
+  const [formData, setFormData] = useState({
+    label: "",
+    feedKey: "",
+    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream" | "color",
+    unit: "",
+    min: "0",
+    max: "255",
+    accountId: ""
+  });
+  const [isManualFeed, setIsManualFeed] = useState(false);
+
   return (
     <Shell>
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-24 relative overflow-hidden p-8 border-b-2 border-archival-fg/10">
@@ -164,39 +240,99 @@ export default function Home() {
             {dashboardTitle.replace(" ", "\n")}
           </h1>
         </div>
-        <div className="flex gap-4">
-          <Button variant="ghost" onClick={fetchData} disabled={isLoading} className="border-archival-fg/20 hover:border-archival-fg">
-            <RefreshCcw className={cn("w-4 h-4 mr-2", isLoading && "animate-spin")} />
-            SYNC_ARCHIVE
-          </Button>
-          <Link href="/automations">
-            <Button variant="ghost" className="border-archival-fg/20 hover:border-archival-fg">
-              <Zap className="w-4 h-4 mr-2" />
-              LOGIC_MATRIX
-            </Button>
-          </Link>
-          <Button onClick={handleOpenCreate} className="transition-all">
-            <Plus className="w-4 h-4 mr-2" />
-            NEW_SPECIMEN
-          </Button>
-          <Button variant="ghost" onClick={handleLogout} className="border-archival-accent text-archival-accent hover:bg-archival-accent hover:text-white transition-all">
-            <LogOut className="w-4 h-4" />
-          </Button>
+        <div className="flex flex-wrap items-center gap-2 bg-archival-surface/50 p-2 rounded-[8px] border border-archival-muted/30 backdrop-blur-sm">
+          {!isRearrangeMode ? (
+            <>
+              <div className="flex items-center gap-1 border-r border-archival-muted/30 pr-2 mr-1">
+                <Button size="sm" variant="ghost" onClick={fetchData} disabled={isLoading} title="Sync Archive">
+                  <RefreshCcw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+                  <span className="hidden lg:inline">SYNC</span>
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setIsRearrangeMode(true)} title="Rearrange Layout">
+                  <Move className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">REARRANGE</span>
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Link href="/automations">
+                  <Button size="sm" variant="ghost" title="Logic Matrix">
+                    <Zap className="w-3.5 h-3.5" />
+                    <span className="hidden lg:inline">MATRIX</span>
+                  </Button>
+                </Link>
+                <Button size="sm" onClick={handleOpenCreate} className="bg-archival-fg text-archival-bg border-archival-fg hover:bg-archival-accent hover:border-archival-accent">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">NEW_SPECIMEN</span>
+                </Button>
+              </div>
+
+              <div className="ml-2 pl-2 border-l border-archival-muted/30">
+                <Button size="sm" variant="minimal" onClick={handleLogout} className="text-archival-accent hover:bg-archival-accent/10">
+                  <LogOut className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 px-2">
+                <div className="text-[10px] font-mono font-bold text-archival-accent animate-pulse mr-2">REARRANGE_MODE_ACTIVE</div>
+                <Button size="sm" onClick={saveNewOrder} disabled={isLoading} className="bg-archival-success border-archival-success hover:bg-green-700">
+                  <Check className="w-3.5 h-3.5 mr-1" />
+                  SAVE
+                </Button>
+                <Button size="sm" variant="ghost" onClick={cancelRearrange} className="border-archival-accent text-archival-accent hover:bg-archival-accent hover:text-white">
+                  <XIcon className="w-3.5 h-3.5 mr-1" />
+                  CANCEL
+                </Button>
+              </div>
+            </>
+          )}
         </div>
         <div className="absolute top-0 right-0 p-2 opacity-10 font-mono text-[8px] tracking-widest uppercase pointer-events-none">
-          SYSTEM_VERSION: 1.0.5-STABLE
+          SYSTEM_VERSION: 1.0.6-STABLE
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-8 bg-archival-bg/10">
+      <div className="bg-archival-bg/10 p-8 rounded-[8px]">
         {widgets.length > 0 ? (
-          widgets.map((widget) => (
-            <div key={widget.id} className="relative group">
-              <RealtimeWidget widget={widget} initialValue={discoveredFeeds.find(f => f.key === widget.feedKey)?.last_value} onEdit={() => handleOpenEdit(widget)} />
-            </div>
-          ))
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={widgets.map(w => w.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {widgets.map((widget) => (
+                  <SortableWidgetWrapper 
+                    key={widget.id} 
+                    widget={widget} 
+                    isRearrangeMode={isRearrangeMode}
+                    discoveredFeeds={discoveredFeeds}
+                    onEdit={() => handleOpenEdit(widget)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+            <DragOverlay>
+              {activeId ? (
+                <div className="opacity-80 scale-105 pointer-events-none">
+                  <RealtimeWidget 
+                    widget={widgets.find(w => w.id === activeId)} 
+                    initialValue={discoveredFeeds.find(f => f.key === widgets.find(w => w.id === activeId)?.feedKey)?.last_value}
+                    onEdit={() => {}}
+                    isRearrangeMode={true}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         ) : (
-          <div className="col-span-full p-32 text-center border-4 border-dashed border-archival-muted/30 bg-[#F0EDE4] flex flex-col items-center justify-center gap-6">
+          <div className="p-32 text-center border-4 border-dashed border-archival-muted/30 bg-[#F0EDE4] flex flex-col items-center justify-center gap-6">
             <div className="text-[10px] font-mono font-bold tracking-[0.4em] uppercase text-archival-muted-fg/40 mb-2">
               ARCHIVE_EMPTY_REFERENCE_00
             </div>
@@ -372,7 +508,36 @@ export default function Home() {
   );
 }
 
-function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initialValue?: string; onEdit: () => void }) {
+function SortableWidgetWrapper({ widget, isRearrangeMode, discoveredFeeds, onEdit }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: widget.id, disabled: !isRearrangeMode });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.4 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...(isRearrangeMode ? listeners : {})}>
+      <RealtimeWidget 
+        widget={widget} 
+        initialValue={discoveredFeeds.find((f: any) => f.key === widget.feedKey)?.last_value} 
+        onEdit={onEdit} 
+        isRearrangeMode={isRearrangeMode}
+      />
+    </div>
+  );
+}
+
+function RealtimeWidget({ widget, initialValue, onEdit, isRearrangeMode }: { widget: any; initialValue?: string; onEdit: () => void; isRearrangeMode?: boolean }) {
   const [value, setValue] = useState<string | null>(initialValue || null);
   const [history, setHistory] = useState<any[]>([]);
   const settings = JSON.parse(widget.settings || "{}");
@@ -388,8 +553,8 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
     try {
       const res = await fetch(`/api/feeds/${widget.feedKey}/history`);
       if (res.ok) setHistory(await res.json());
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
     }
   };
 
@@ -410,6 +575,7 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
   }, [widget.feedKey, widget.type]);
 
   const handleControlChange = async (newValue: string) => {
+    if (isRearrangeMode) return;
     if (widget.type !== "button") {
       setValue(newValue); 
     }
@@ -434,7 +600,7 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
       } else {
         toast.error("SIGNAL_TRANSMISSION_FAILED");
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error("NETWORK_TRANSPORT_ERROR");
     }
   };
@@ -450,7 +616,7 @@ function RealtimeWidget({ widget, initialValue, onEdit }: { widget: any; initial
       onControlChange={handleControlChange}
       onHeaderClick={onEdit}
       history={history}
-      className="h-full"
+      className={cn("h-full", isRearrangeMode && "cursor-move border-archival-accent/50 shadow-lg")}
     />
   );
 }

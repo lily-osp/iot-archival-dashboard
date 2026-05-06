@@ -2,7 +2,7 @@
 
 import { Shell, Button, cn } from "@/components/ui/archival";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Layers, Zap, Database, Shield, Activity } from "lucide-react";
+import { ArrowLeft, BookOpen, Layers, Zap, Database, Shield, Activity, Move } from "lucide-react";
 
 export default function DocsPage() {
   return (
@@ -22,7 +22,7 @@ export default function DocsPage() {
           Archival<br />Procedures
         </h1>
         <div className="absolute top-0 right-0 p-4 opacity-5 font-mono text-[10px] tracking-widest uppercase pointer-events-none">
-          DOCS_VERSION_1.0
+          DOCS_VERSION_1.0.6
         </div>
       </header>
 
@@ -39,6 +39,7 @@ export default function DocsPage() {
               <li><a href="#open-data" className="hover:text-archival-accent transition-colors">Virtual Feeds (Open Data)</a></li>
               <li><a href="#data-retention" className="hover:text-archival-accent transition-colors">Data Point Retention</a></li>
               <li><a href="#specimens" className="hover:text-archival-accent transition-colors">Specimen Types</a></li>
+              <li><a href="#customization" className="hover:text-archival-accent transition-colors">Layout Customization</a></li>
               <li><a href="#provisioning" className="hover:text-archival-accent transition-colors">Auto-Provisioning</a></li>
               <li><a href="#logic-matrix" className="hover:text-archival-accent transition-colors">Logic Matrix</a></li>
               <li><a href="#how-to" className="hover:text-archival-accent transition-colors">How-To Guide</a></li>
@@ -165,6 +166,26 @@ export default function DocsPage() {
 
           <div className="border-t border-archival-muted/20" />
 
+          <section id="customization" className="scroll-mt-12">
+            <div className="flex items-center gap-4 mb-6">
+              <Move className="w-6 h-6 text-archival-accent" />
+              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">Layout Customization</h2>
+            </div>
+            <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
+              <p className="mb-6">
+                The dashboard supports intuitive, persistent rearrangement of your specimen collection. Users can organize their archive into a logical hierarchy that suits their specific monitoring needs.
+              </p>
+              <p className="mb-6">
+                <strong className="text-archival-accent">Persistent Ordering:</strong> Unlike transient UI layouts, the system stores the specific sequence of widgets in the local database. This ensures your collection remains exactly where you placed it across different devices and sessions.
+              </p>
+              <p>
+                <strong className="text-archival-accent">Safety Interlocks:</strong> When entering Rearrange Mode, all interactive controls (switches, buttons, sliders) are automatically locked. This prevents accidental command transmission while you are organizing your interface.
+              </p>
+            </div>
+          </section>
+
+          <div className="border-t border-archival-muted/20" />
+
           <section id="provisioning" className="scroll-mt-12">
             <div className="flex items-center gap-4 mb-6">
               <Zap className="w-6 h-6 text-archival-accent" />
@@ -266,6 +287,17 @@ export default function DocsPage() {
                   <li>Select the Widget Type (e.g. <span className="font-mono text-[0.75rem] bg-archival-bg px-1">MONITOR</span> or <span className="font-mono text-[0.75rem] bg-archival-bg px-1">SWITCH</span>).</li>
                   <li>Choose an existing feed from the dropdown, or select <span className="font-mono text-[0.75rem] bg-archival-bg px-1">CREATE_NEW_FEED</span> to Auto-Provision a new one.</li>
                   <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">COMMIT_RECORD</span> to place the widget on your dashboard grid.</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Rearranging Dashboard Widgets</h3>
+                <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
+                  <li>Click the <span className="font-mono text-[0.75rem] bg-archival-bg px-1 text-archival-accent">REARRANGE</span> button in the dashboard header.</li>
+                  <li>Observe that the cursor changes to a "move" icon and widget borders become accentuated.</li>
+                  <li>Click and hold any widget to drag it to a new position. The grid will automatically reflow.</li>
+                  <li>Once satisfied with the arrangement, click <span className="font-mono text-[0.75rem] bg-archival-bg px-1 text-archival-success">SAVE_LAYOUT</span> to persist changes to the database.</li>
+                  <li>If you wish to discard changes, click <span className="font-mono text-[0.75rem] bg-archival-bg px-1 text-archival-accent">CANCEL</span>.</li>
                 </ol>
               </div>
 

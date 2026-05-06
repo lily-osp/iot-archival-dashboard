@@ -42,6 +42,7 @@ model Widget {
   y           Int
   w           Int
   h           Int
+  order       Int       @default(0)
   dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
   dashboardId String
 }

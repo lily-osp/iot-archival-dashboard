@@ -486,20 +486,30 @@ export function Modal({
 export function Button({ 
   className, 
   variant = "primary", 
+  size = "md",
   ...props 
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { 
-  variant?: "primary" | "ghost"
+  variant?: "primary" | "ghost" | "minimal";
+  size?: "sm" | "md" | "lg";
 }) {
   const variants = {
     primary: "bg-archival-accent text-archival-bg border border-archival-accent hover:bg-[#A02020] hover:border-[#A02020] active:bg-[#6B1212] active:border-[#6B1212]",
     ghost: "bg-transparent text-archival-fg border border-archival-muted hover:border-archival-accent hover:text-archival-accent",
+    minimal: "bg-transparent text-archival-muted-fg border-transparent hover:text-archival-accent hover:bg-archival-accent/5",
+  };
+
+  const sizes = {
+    sm: "px-2 py-1 text-[10px] tracking-[0.05em]",
+    md: "px-4 py-2 text-[0.75rem] tracking-[0.1em]",
+    lg: "px-8 py-4 text-[0.875rem] tracking-[0.2em]",
   };
 
   return (
     <button
       className={cn(
-        "font-mono text-[0.75rem] font-semibold uppercase tracking-[0.1em] px-4 py-2 rounded-[6px] transition-all duration-[150ms] disabled:opacity-50 disabled:cursor-not-allowed",
+        "font-mono font-semibold uppercase rounded-[4px] transition-all duration-[150ms] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2",
         variants[variant],
+        sizes[size],
         className
       )}
       {...props}

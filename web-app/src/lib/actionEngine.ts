@@ -3,10 +3,24 @@ import redis from "./redis";
 
 const MAX_DEPTH = 5;
 
-export async function executeActions(actions: any[], depth: number = 0, sourceFeedKey?: string) {
+export async function executeActions(actions: any[], depth: number = 0, sourceFeedKey?: string, triggeredIds: string[] = []) {
   if (depth > MAX_DEPTH) {
     console.error("System Archive: Max automation trigger depth exceeded to prevent infinite loops.");
     return;
+  }
+
+  // Optional: Global rate limiting per feed key to prevent runaway sensors
+  if (sourceFeedKey) {
+    const cooldownKey = `cooldown:feed:${sourceFeedKey}`;
+    const recentTriggers = await redis.get(cooldownKey);
+    if (recentTriggers && parseInt(recentTriggers) > 10) { // Max 10 triggers per window
+      console.warn(`System Archive: Rate limit exceeded for feed [${sourceFeedKey}]. Throttling execution.`);
+      return;
+    }
+    await redis.incr(cooldownKey);
+    if (parseInt(recentTriggers || "0") === 0) {
+      await redis.expire(cooldownKey, 5); // 5 second window
+    }
   }
 
   for (const action of actions) {
@@ -42,17 +56,24 @@ export async function executeActions(actions: any[], depth: number = 0, sourceFe
         console.error(`System Archive: Webhook Failed:`, e.message);
       }
     } else if (action.type === "trigger" && action.value) {
-      console.log(`System Archive: Triggering Connected Automation ID [${action.value}] (Depth: ${depth + 1})`);
+      const targetId = action.value;
+      
+      if (triggeredIds.includes(targetId)) {
+        console.warn(`System Archive: Circular automation trigger detected for ID [${targetId}]. Aborting chain.`);
+        continue;
+      }
+
+      console.log(`System Archive: Triggering Connected Automation ID [${targetId}] (Depth: ${depth + 1})`);
       try {
         const targetRule = await prisma.automation.findUnique({
-          where: { id: action.value },
+          where: { id: targetId },
           include: { actions: { orderBy: { order: "asc" } } },
         });
 
         if (targetRule && targetRule.isActive) {
           const targetActions = targetRule.actions.filter((a: any) => !a.isElse);
           if (targetActions.length > 0) {
-            await executeActions(targetActions, depth + 1, sourceFeedKey);
+            await executeActions(targetActions, depth + 1, sourceFeedKey, [...triggeredIds, targetId]);
           }
         }
       } catch (e: any) {

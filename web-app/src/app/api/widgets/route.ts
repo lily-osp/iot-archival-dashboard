@@ -8,7 +8,9 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const widgets = await prisma.widget.findMany();
+    const widgets = await prisma.widget.findMany({
+      orderBy: { order: "asc" }
+    });
     return NextResponse.json(widgets);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch widgets" }, { status: 500 });
@@ -39,6 +41,12 @@ export async function POST(request: Request) {
       });
     }
 
+    // Get the highest order value
+    const lastWidget = await prisma.widget.findFirst({
+      orderBy: { order: "desc" }
+    });
+    const nextOrder = lastWidget ? lastWidget.order + 1 : 0;
+
     const widget = await prisma.widget.create({
       data: {
         type: data.type,
@@ -50,6 +58,7 @@ export async function POST(request: Request) {
         y: data.y || 0,
         w: data.w || 1,
         h: data.h || 1,
+        order: nextOrder,
         dashboardId: dashboard.id
       }
     });
