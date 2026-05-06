@@ -59,6 +59,15 @@ export function MuseumLabel({
   const [isPressing, setIsPressing] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const formatSpecimenValue = (val: any) => {
+    if (val === undefined || val === null) return "---";
+    const num = parseFloat(val.toString());
+    if (isNaN(num)) return val.toString();
+    
+    // Round to max 4 decimal places and remove trailing zeros
+    return Number(Math.round(Number(num + 'e4')) + 'e-4').toString();
+  };
+
   useEffect(() => {
     if (type === "slider" && value !== undefined && value !== null) {
       setLocalSliderValue(value.toString());
@@ -98,7 +107,7 @@ export function MuseumLabel({
         {type === "monitor" && (
           <div className="flex items-baseline gap-3">
             <span className="text-[3rem] font-bold font-sans tracking-[-0.03em] leading-[1.05] text-archival-fg">
-              {value ?? "---"}
+              {formatSpecimenValue(value)}
             </span>
             {unit && (
               <span className="text-[0.875rem] font-mono font-semibold text-archival-muted-fg uppercase tracking-[0.1em]">
@@ -120,7 +129,7 @@ export function MuseumLabel({
               <div className="text-[0.75rem] font-mono font-semibold tracking-[0.1em] text-archival-fg uppercase">
                 {(value === "1" || value === "ON" || value === "true") ? "ACTIVE_SIGNAL" : "SIGNAL_DORMANT"}
               </div>
-              <div className="text-[0.625rem] text-archival-muted-fg font-mono uppercase tracking-[0.1em]">REF_STATE: {value ?? "UNDEFINED"}</div>
+              <div className="text-[0.625rem] text-archival-muted-fg font-mono uppercase tracking-[0.1em]">REF_STATE: {formatSpecimenValue(value ?? "UNDEFINED")}</div>
             </div>
           </div>
         )}
@@ -159,7 +168,7 @@ export function MuseumLabel({
         {type === "slider" && (
           <div className="space-y-4 p-4 rounded-[6px] border border-archival-muted/50 bg-archival-bg/50">
             <div className="flex justify-between items-end">
-              <span className="text-[2.25rem] font-bold font-sans tracking-[-0.03em] leading-[1.1] text-archival-fg">{localSliderValue ?? value ?? min}</span>
+              <span className="text-[2.25rem] font-bold font-sans tracking-[-0.03em] leading-[1.1] text-archival-fg">{formatSpecimenValue(localSliderValue ?? value ?? min)}</span>
               <span className="text-[0.625rem] font-mono font-semibold text-archival-muted-fg tracking-[0.1em] uppercase">{unit}</span>
             </div>
             <input 
@@ -247,7 +256,7 @@ export function MuseumLabel({
                 strokeDasharray={`${Math.max(0, Math.min(100, ((parseFloat(value as string || min.toString()) - min) / (max - min)) * 100)) * 1.2566}, 200`} />
             </svg>
             <div className="absolute bottom-4 flex items-baseline gap-1">
-              <span className="text-[1.5rem] font-bold font-sans tracking-[-0.02em] leading-none text-archival-fg">{value ?? min}</span>
+              <span className="text-[1.5rem] font-bold font-sans tracking-[-0.02em] leading-none text-archival-fg">{formatSpecimenValue(value ?? min)}</span>
               {unit && <span className="text-[0.625rem] font-mono text-archival-muted-fg uppercase tracking-[0.1em]">{unit}</span>}
             </div>
             <div className="flex justify-between w-full max-w-[200px] mt-2 px-2 text-[0.5rem] font-mono text-archival-muted-fg">
@@ -265,7 +274,7 @@ export function MuseumLabel({
                   <span className="text-archival-muted-fg shrink-0 opacity-60 w-[60px]">
                     {new Date(d.created_at).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </span>
-                  <span className="break-all font-medium text-archival-accent/90">{d.value}</span>
+                  <span className="break-all font-medium text-archival-accent/90">{formatSpecimenValue(d.value)}</span>
                 </div>
               ))}
               {history.length === 0 && (

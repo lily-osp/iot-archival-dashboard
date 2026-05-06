@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Shell, MuseumLabel, Button, Modal, Input, Select, ConfirmationModal, toast, cn } from "@/components/ui/archival";
-import { Plus, Settings, RefreshCcw, LogOut, User, Trash2, Zap, Move, Check, X as XIcon } from "lucide-react";
+import { Plus, Settings, RefreshCcw, LogOut, User, Trash2, Zap, Move, Check, X as XIcon, Maximize, Minimize } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -37,7 +37,29 @@ export default function Home() {
   const [widgetToDelete, setWidgetToDelete] = useState<string | null>(null);
   const [isRearrangeMode, setIsRearrangeMode] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const router = useRouter();
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((e) => {
+        toast.error("FULLSCREEN_REQUEST_DENIED");
+        console.error(e);
+      });
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -251,6 +273,10 @@ export default function Home() {
                 <Button size="sm" variant="ghost" onClick={() => setIsRearrangeMode(true)} title="Rearrange Layout">
                   <Move className="w-3.5 h-3.5" />
                   <span className="hidden lg:inline">REARRANGE</span>
+                </Button>
+                <Button size="sm" variant="ghost" onClick={toggleFullscreen} title={isFullscreen ? "Exit Kiosk Mode" : "Enter Kiosk Mode"}>
+                  {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
+                  <span className="hidden lg:inline">{isFullscreen ? "EXIT_KIOSK" : "KIOSK_MODE"}</span>
                 </Button>
               </div>
 
