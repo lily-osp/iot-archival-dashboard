@@ -81,11 +81,15 @@ export async function GET() {
       where: { targetFeedKey: null } // Only unlinked sources act as virtual feeds
     });
     
-    const virtualFeeds = openDataSources.map(s => ({
-      key: `open_${s.id}`,
-      name: s.name,
-      last_value: "Pending",
-      accountName: "OPEN DATA SOURCE",
+    const { default: redis } = await import("@/lib/redis");
+    const virtualFeeds = await Promise.all(openDataSources.map(async (s) => {
+      const lastVal = await redis.get(`last:open_${s.id}`);
+      return {
+        key: `open_${s.id}`,
+        name: s.name,
+        last_value: lastVal ?? "Pending",
+        accountName: "OPEN DATA SOURCE",
+      };
     }));
 
     return NextResponse.json([...uniqueFeeds, ...virtualFeeds]);
