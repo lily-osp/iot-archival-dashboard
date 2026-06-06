@@ -3,6 +3,7 @@ services:
     build:
       context: ./web-app
       dockerfile: Dockerfile
+    restart: always
     ports:
       - "3010:3000"
     environment:
@@ -20,15 +21,6 @@ services:
     ports:
       - "6381:6379"
     restart: always
-
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    restart: always
-    command: tunnel --no-autoupdate run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-    depends_on:
-      - web
 
 volumes:
   data:

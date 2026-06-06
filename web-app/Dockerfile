@@ -9,7 +9,7 @@ RUN npm install
 
 # Build the application
 COPY . .
-RUN npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 RUN npm run build
 
 # Stage 2: Runtime
