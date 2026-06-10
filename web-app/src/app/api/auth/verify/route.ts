@@ -28,13 +28,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${BASE_URL}/verify?error=token_expired`);
     }
 
-    // Mark token as used
-    await prisma.emailVerificationToken.update({
-      where: { id: verificationToken.id },
-      data: { used: true },
-    });
-
-    // Verify the user's email
+    // Verify the user's email (token marked as used in set-password)
     await prisma.user.update({
       where: { id: verificationToken.userId },
       data: { emailVerified: true },
