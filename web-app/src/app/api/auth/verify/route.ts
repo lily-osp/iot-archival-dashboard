@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       data: { emailVerified: true },
     });
 
-    return NextResponse.redirect(`${BASE_URL}/verify?success=true`);
+    return NextResponse.redirect(`${BASE_URL}/set-password?token=${token}`);
   } catch (error) {
     console.error("Verification error:", error);
     return NextResponse.redirect(`${BASE_URL}/verify?error=internal_error`);

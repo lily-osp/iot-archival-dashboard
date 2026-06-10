@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Shell, Button, Input, Modal, ConfirmationModal, toast } from "@/components/ui/archival";
-import { ArrowLeft, Save, Database, Shield, Plus, Trash2, Edit3, Key, Users, UserCheck, Mail, Building, Send, ShieldOff } from "lucide-react";
+import { ArrowLeft, Save, Database, Shield, Plus, Trash2, Edit3, Key, Users, UserCheck, Mail, Building, Send, ShieldOff, Lock } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -41,6 +41,10 @@ export default function SettingsPage() {
   // Open Source Delete Modal State
   const [isOpenSourceDeleteModalOpen, setIsOpenSourceDeleteModalOpen] = useState(false);
   const [openSourceToDelete, setOpenSourceToDelete] = useState<string | null>(null);
+
+  // Change Password State
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const fetchUsers = async () => {
     if (!isAdmin) return;
@@ -182,6 +186,40 @@ export default function SettingsPage() {
       }
     } catch {
       toast.error("NETWORK_TRANSPORT_ERROR");
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("PASSWORDS_DO_NOT_MATCH");
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      toast.error("PASSWORD_TOO_SHORT");
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("PASSWORD_CHANGED");
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        toast.error(data.error || "CHANGE_FAILED");
+      }
+    } catch {
+      toast.error("NETWORK_TRANSPORT_ERROR");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -445,6 +483,51 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Change Password - All Users */}
+      <div className="mb-16 space-y-8">
+        <div className="flex items-center gap-3">
+          <Lock className="w-6 h-6 text-archival-fg" />
+          <div>
+            <h2 className="text-[1.5rem] font-bold font-sans tracking-[-0.02em] uppercase text-archival-fg">Change Password</h2>
+            <div className="text-[0.625rem] font-mono tracking-widest uppercase text-archival-muted-fg mt-1">
+              Update your account password
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-md border border-archival-muted p-8 bg-archival-surface rounded-[6px]">
+          <form onSubmit={handleChangePassword} className="space-y-6">
+            <Input
+              label="Current Password"
+              type="password"
+              value={passwordForm.currentPassword}
+              onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+              placeholder="Enter current password"
+              required
+            />
+            <Input
+              label="New Password"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+              placeholder="Min 6 characters"
+              required
+            />
+            <Input
+              label="Confirm New Password"
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+              placeholder="Repeat new password"
+              required
+            />
+            <Button type="submit" disabled={isChangingPassword}>
+              {isChangingPassword ? "UPDATING..." : "UPDATE_PASSWORD"}
+            </Button>
+          </form>
+        </div>
+      </div>
 
       {/* Adafruit IO Accounts */}
       <div className="mb-16 space-y-8">

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { decrypt } from "@/lib/auth";
 
 const protectedRoutes = ["/", "/settings"];
-const publicRoutes = ["/login", "/register", "/verify"];
+const publicRoutes = ["/login", "/register", "/verify", "/set-password"];
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
