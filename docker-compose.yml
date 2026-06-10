@@ -11,6 +11,10 @@ services:
       - ADAFRUIT_IO_USERNAME=${ADAFRUIT_IO_USERNAME}
       - ADAFRUIT_IO_KEY=${ADAFRUIT_IO_KEY}
       - REDIS_URL=redis://redis:6379
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM:-IoT Archive <noreply@resend.dev>}
+      - JWT_SECRET=${JWT_SECRET}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3010}
     depends_on:
       - redis
     volumes:

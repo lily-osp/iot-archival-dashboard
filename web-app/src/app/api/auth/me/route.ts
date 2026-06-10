@@ -6,5 +6,14 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return NextResponse.json({ user: session });
+  return NextResponse.json({
+    user: {
+      userId: session.userId,
+      username: session.username,
+      role: session.role,
+      tenantId: session.tenantId,
+      tenantName: session.tenantName,
+      tenantSlug: session.tenantSlug,
+    },
+  });
 }

@@ -7,15 +7,30 @@ export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { username },
+      include: { tenant: true },
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    await login({ username: user.username, role: user.role });
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        { error: "EMAIL_NOT_VERIFIED", email: user.email },
+        { status: 403 }
+      );
+    }
+
+    await login({
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      tenantId: user.tenantId,
+      tenantName: user.tenant.name,
+      tenantSlug: user.tenant.slug,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shell, Button, Input, toast, cn } from "@/components/ui/archival";
+import { Shell, Button, Input, toast } from "@/components/ui/archival";
 import Link from "next/link";
-import { UserPlus, ArrowLeft } from "lucide-react";
+import { UserPlus, ArrowLeft, Building } from "lucide-react";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
+    orgName: "",
     username: "",
+    email: "",
     password: "",
     confirmPassword: ""
   });
@@ -31,11 +33,12 @@ export default function RegisterPage() {
         body: JSON.stringify(formData),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        toast.success("COLLECTOR_RECORD_INITIALIZED");
+        toast.success("ORGANIZATION_CREATED_CHECK_EMAIL");
         router.push("/login");
       } else {
-        const data = await res.json();
         toast.error(data.error || "REGISTRATION_FAILED");
       }
     } catch (err) {
@@ -47,31 +50,55 @@ export default function RegisterPage() {
 
   return (
     <Shell>
-      <div className="max-w-md mx-auto mt-24">
+      <div className="max-w-md mx-auto mt-16">
         <Link href="/login" className="inline-flex items-center text-[10px] font-mono font-bold tracking-[0.3em] uppercase text-archival-muted-fg hover:text-archival-fg transition-all mb-8 group">
           <ArrowLeft className="w-3 h-3 mr-2 group-hover:-translate-x-1 transition-transform" />
           Abort Registration
         </Link>
         
         <div className="flex items-center gap-2 museum-label mb-2 text-archival-accent">
-          <UserPlus className="w-3 h-3" />
-          <span>New Specimen Collector Entry</span>
+          <Building className="w-3 h-3" />
+          <span>Initialize New Archive Organization</span>
         </div>
         <h1 className="text-[3rem] font-bold tracking-[-0.03em] uppercase font-sans mb-12 leading-[1.05]">
           Archive<br />Initialization
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-8 border border-archival-fg p-10 bg-archival-surface rounded-[6px] relative overflow-hidden">
+        <form onSubmit={handleSubmit} className="space-y-6 border border-archival-fg p-10 bg-archival-surface rounded-[6px] relative overflow-hidden">
           <Input 
-            label="Collector ID Selection"
+            label="Organization Name"
+            value={formData.orgName}
+            onChange={(e) => setFormData({ ...formData, orgName: e.target.value })}
+            placeholder="e.g. My IoT Lab"
+            required
+          />
+
+          <div className="border-t border-archival-muted/30 pt-6">
+            <div className="flex items-center gap-2 museum-label mb-4 text-archival-muted-fg">
+              <UserPlus className="w-3 h-3" />
+              <span>Admin Account</span>
+            </div>
+          </div>
+
+          <Input 
+            label="Admin Username"
             value={formData.username}
             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-            placeholder="NEW_COLLECTOR_ID"
+            placeholder="ADMIN_ID"
             required
           />
 
           <Input 
-            label="Initial Security Key"
+            label="Admin Email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="admin@example.com"
+            required
+          />
+
+          <Input 
+            label="Password"
             type="password"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -80,7 +107,7 @@ export default function RegisterPage() {
           />
 
           <Input 
-            label="Confirm Security Key"
+            label="Confirm Password"
             type="password"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -89,16 +116,11 @@ export default function RegisterPage() {
           />
 
           <Button type="submit" className="w-full py-6 text-[11px] tracking-[0.4em] uppercase" disabled={isLoading}>
-            {isLoading ? "COMMITTING_RECORD..." : "INITIALIZE_COLLECTOR_ACCOUNT"}
+            {isLoading ? "COMMITTING RECORD..." : "INITIALIZE ARCHIVE ORG"}
           </Button>
 
-          {/* Decorative Archive Metadata */}
           <div className="absolute bottom-0 right-0 p-2 opacity-5 font-mono text-[8px] tracking-widest uppercase pointer-events-none">
-            REG_MODULE_V1.0
-          </div>
-          
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-            <div className="text-[60px] font-bold font-mono leading-none">01</div>
+            REG_MODULE_V2.0
           </div>
         </form>
         
@@ -107,11 +129,19 @@ export default function RegisterPage() {
           <ul className="space-y-2">
             <li className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-archival-muted-fg">
               <span className="w-1 h-1 bg-archival-accent rounded-full" />
-              Minimum Key Length: 06 Characters
+              Minimum Password Length: 06 Characters
             </li>
             <li className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-archival-muted-fg">
               <span className="w-1 h-1 bg-archival-accent rounded-full" />
-              Unique Identifier Required
+              Valid Email Address Required
+            </li>
+            <li className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-archival-muted-fg">
+              <span className="w-1 h-1 bg-archival-accent rounded-full" />
+              Email Verification Required Before Access
+            </li>
+            <li className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-archival-muted-fg">
+              <span className="w-1 h-1 bg-archival-accent rounded-full" />
+              Admin Can Invite Up To 5 Users
             </li>
           </ul>
         </div>

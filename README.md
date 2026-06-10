@@ -2,7 +2,7 @@
 
 ![Feed Dashboard](images/feed_dashboard.png)
 
-A Swiss Archival-styled IoT dashboard designed as an elegant, robust, and highly functional interface for Adafruit IO. It features real-time updates, historical data tracking, and a powerful local automation engine.
+A Swiss Archival-styled IoT dashboard designed as an elegant, robust, and highly functional interface for Adafruit IO. It features real-time updates, historical data tracking, a powerful local automation engine, and tenant-based user management with email verification.
 
 ![Automation Logic Matrix](images/automation.png)
 
@@ -12,6 +12,8 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
 
 ## Features
 
+- **Tenant-Based Multi-User System**: Organizations can create up to 5 users with role-based access (Admin / User). Each tenant has isolated user management.
+- **Email Verification**: New accounts require email verification via Resend before login is enabled. Admins can invite team members who receive email invitations.
 - **Swiss Archival Design**: Warm cream palette, blueprint grids, tactile noise grain, and minimalist glassmorphism elements.
 - **Auto-Discovery**: Automatically fetches all active feeds from your Adafruit IO account.
 - **Data Point Retention**: Automatically archives incoming specimen data locally in SQLite, retaining up to 7 days (configurable). Guarantees chart continuity and historical tracking natively for both Adafruit feeds and Virtual (Open) Data Feeds.
@@ -44,7 +46,9 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
   - Bypass free-tier feed limits by aggregating feeds from several accounts into one unified dashboard.
   - The Multi-Broker MQTT engine seamlessly maintains concurrent real-time connections to all provisioned accounts.
 - **Security-First Approach**:
-  - JWT-based authentication layer.
+  - JWT-based authentication with HTTP-only cookies.
+  - Email verification required before account activation.
+  - Role-based access control (Admin / User).
   - Local isolation ensures your Adafruit IO key never leaves the secure server environment.
   - SQLite with Prisma ORM for persistent local storage.
 
@@ -65,6 +69,7 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
 ### Prerequisites
 - Docker & Docker Compose
 - Adafruit IO Account
+- Resend API Key (for email verification) - [Get one free at resend.com](https://resend.com)
 
 ### Installation
 
@@ -75,9 +80,18 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
    ```
 
 2. **Configure Environment Variables**:
-   Copy the example environment file and fill in your Cloudflare Tunnel Token (if using the tunnel):
+   Copy the example environment file and fill in your credentials:
    ```bash
    cp .env.example .env
+   ```
+   
+   Edit `.env` with your values:
+   ```env
+   ADAFRUIT_IO_USERNAME=your_adafruit_username
+   ADAFRUIT_IO_KEY=your_adafruit_key
+   RESEND_API_KEY=re_your_resend_api_key
+   EMAIL_FROM="IoT Archive <noreply@yourdomain.com>"
+   JWT_SECRET=your_random_secret_string
    ```
 
 3. **Run with Docker Compose**:
@@ -85,9 +99,36 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
    docker compose up -d --build
    ```
 
-4. **Access the dashboard**: Open [http://localhost:3010](http://localhost:3010) in your browser. Register an initial admin account on the login screen to access the archive.
+4. **Access the dashboard**: Open [http://localhost:3010](http://localhost:3010) in your browser.
 
-5. **Configure Credentials**: Navigate to **System Configuration** within the dashboard to set your Adafruit IO Username and Key securely.
+5. **Create Organization**: Register your organization and admin account. You'll receive a verification email via Resend.
+
+6. **Verify Email**: Click the verification link in the email, then log in.
+
+7. **Configure Credentials**: Navigate to **System Configuration** within the dashboard to set your Adafruit IO Username and Key securely.
+
+## User Management
+
+### Roles
+- **Admin**: Full access. Can invite/remove users, manage system settings, Adafruit IO accounts, and open data sources.
+- **User**: Can view dashboard, interact with widgets, and view automations. Cannot modify system settings.
+
+### Registration Flow
+1. **Create Organization** (`/register`): Enter org name, admin username, email, and password.
+2. **Email Verification**: A verification email is sent via Resend. Click the link to activate.
+3. **Login**: After verification, log in with your credentials.
+
+### Inviting Users (Admin Only)
+1. Navigate to **Settings** > **User Management**.
+2. Click `INVITE_USER`.
+3. Enter the user's username, email, and role.
+4. The user receives an email invitation to set their password.
+5. Maximum 5 users per organization.
+
+### Removing Users (Admin Only)
+1. Navigate to **Settings** > **User Management**.
+2. Click the trash icon next to the user.
+3. Confirm the deletion. The user loses access immediately.
 
 ## How-To Guide (Quick Procedures)
 
@@ -122,8 +163,9 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, Tailwind CSS v4, Lucide React
-- **Backend**: Next.js API Routes, MQTT.js, ioredis
+- **Frontend**: Next.js 16, React 19, Tailwind CSS v4, Lucide React
+- **Backend**: Next.js API Routes, MQTT.js, ioredis, BullMQ
+- **Auth**: JWT (jose), bcryptjs, Resend (email verification)
 - **Database**: SQLite with Prisma ORM
 - **Cache**: Redis (Alpine)
 - **Deployment**: Docker, Cloudflared Tunnel

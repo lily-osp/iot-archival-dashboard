@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { decrypt } from "@/lib/auth";
 
 const protectedRoutes = ["/", "/settings"];
-const publicRoutes = ["/login"];
+const publicRoutes = ["/login", "/register", "/verify"];
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -14,8 +14,6 @@ export default async function middleware(req: NextRequest) {
     console.error("Middleware decrypt error:", err.message);
     return null;
   }) : null;
-
-  console.log(`Middleware path: ${path}, isProtected: ${isProtectedRoute}, sessionValid: ${!!session}, cookiePresent: ${!!cookie}`);
 
   if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));

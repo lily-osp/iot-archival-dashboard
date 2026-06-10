@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shell, Button, MuseumLabel, Input, Modal, ConfirmationModal, toast } from "@/components/ui/archival";
-import { ArrowLeft, Save, AlertCircle, Database, Shield, Plus, Trash2, Edit3, Key } from "lucide-react";
+import { Shell, Button, Input, Modal, ConfirmationModal, toast } from "@/components/ui/archival";
+import { ArrowLeft, Save, Database, Shield, Plus, Trash2, Edit3, Key, Users, UserCheck, Mail, Building, Send, ShieldOff } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -13,6 +13,16 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  // User Management State
+  const [orgUsers, setOrgUsers] = useState<any[]>([]);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [resendingUserId, setResendingUserId] = useState<string | null>(null);
+  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userFormData, setUserFormData] = useState({ username: "", email: "", role: "user" });
 
   // Account Modal State
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -32,6 +42,14 @@ export default function SettingsPage() {
   const [isOpenSourceDeleteModalOpen, setIsOpenSourceDeleteModalOpen] = useState(false);
   const [openSourceToDelete, setOpenSourceToDelete] = useState<string | null>(null);
 
+  const fetchUsers = async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch("/api/auth/users");
+      if (res.ok) setOrgUsers(await res.json());
+    } catch {}
+  };
+
   const fetchData = async () => {
     try {
       const [userRes, settingsRes, accountsRes, openRes, feedRes] = await Promise.all([
@@ -44,7 +62,9 @@ export default function SettingsPage() {
 
       if (userRes.ok) {
         const data = await userRes.json();
+        setUser(data.user);
         if (data.user?.role === "demo") setIsDemo(true);
+        if (data.user?.role === "admin") setIsAdmin(true);
       }
       
       if (settingsRes.ok) setConfigs((await settingsRes.json()).filter((c: any) => !["ADAFRUIT_IO_USERNAME", "ADAFRUIT_IO_KEY"].includes(c.key)));
@@ -61,6 +81,10 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (isAdmin) fetchUsers();
+  }, [isAdmin]);
 
   const handleUpdateConfig = async (key: string, value: string) => {
     if (isDemo) return;
@@ -84,6 +108,84 @@ export default function SettingsPage() {
     }
   };
 
+  // User Management Handlers
+  const handleInviteUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/auth/users", {
+        method: "POST",
+        body: JSON.stringify(userFormData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("USER_INVITED_SUCCESSFULLY");
+        setIsUserModalOpen(false);
+        setUserFormData({ username: "", email: "", role: "user" });
+        fetchUsers();
+      } else {
+        toast.error(data.error || "INVITE_FAILED");
+      }
+    } catch {
+      toast.error("NETWORK_TRANSPORT_ERROR");
+    }
+  };
+
+  const handleResendInvite = async (userId: string) => {
+    setResendingUserId(userId);
+    try {
+      const res = await fetch(`/api/auth/users/${userId}/resend-invite`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("INVITE_RESENT_SUCCESSFULLY");
+      } else {
+        toast.error(data.error || "RESEND_FAILED");
+      }
+    } catch {
+      toast.error("NETWORK_TRANSPORT_ERROR");
+    } finally {
+      setResendingUserId(null);
+    }
+  };
+
+  const handleToggleVerification = async (userId: string, currentStatus: boolean) => {
+    try {
+      const res = await fetch(`/api/auth/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailVerified: !currentStatus }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(currentStatus ? "USER_UNVERIFIED" : "USER_VERIFIED");
+        fetchUsers();
+      } else {
+        toast.error(data.error || "UPDATE_FAILED");
+      }
+    } catch {
+      toast.error("NETWORK_TRANSPORT_ERROR");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    try {
+      const res = await fetch(`/api/auth/users/${userToDelete}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("USER_EXPUNGED");
+        setIsDeleteUserModalOpen(false);
+        fetchUsers();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "DELETE_FAILED");
+      }
+    } catch {
+      toast.error("NETWORK_TRANSPORT_ERROR");
+    }
+  };
+
+  // Account Handlers
   const handleOpenAddAccount = () => {
     setEditingAccount(null);
     setAccountFormData({ name: "", username: "", key: "" });
@@ -92,7 +194,7 @@ export default function SettingsPage() {
 
   const handleOpenEditAccount = (account: any) => {
     setEditingAccount(account);
-    setAccountFormData({ name: account.name, username: account.username, key: "" }); // Leave key blank unless changing
+    setAccountFormData({ name: account.name, username: account.username, key: "" });
     setIsAccountModalOpen(true);
   };
 
@@ -139,6 +241,7 @@ export default function SettingsPage() {
     }
   };
 
+  // Open Source Handlers
   const handleOpenAddOpenSource = () => {
     setEditingOpenSource(null);
     setOpenSourceFormData({ name: "", url: "", jsonPath: "", scheduleCron: "0 * * * *", targetFeedKey: "" });
@@ -234,6 +337,116 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* Organization Info */}
+      {user?.tenantName && (
+        <div className="mb-16 p-8 border border-archival-muted bg-archival-surface rounded-[6px] flex items-center gap-6">
+          <Building className="w-8 h-8 text-archival-accent shrink-0" />
+          <div className="flex-1">
+            <div className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase text-archival-muted-fg mb-1">Organization</div>
+            <div className="text-[1.25rem] font-bold font-sans tracking-[-0.02em] text-archival-fg">{user.tenantName}</div>
+            <div className="text-[0.625rem] font-mono tracking-widest uppercase text-archival-muted-fg/60 mt-1">SLUG: {user.tenantSlug}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] font-mono tracking-widest uppercase text-archival-muted-fg">ROLE</div>
+            <div className="text-[1rem] font-bold font-mono uppercase text-archival-accent">{user.role}</div>
+          </div>
+        </div>
+      )}
+
+      {/* User Management - Admin Only */}
+      {isAdmin && (
+        <div className="mb-16 space-y-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-archival-fg" />
+              <div>
+                <h2 className="text-[1.5rem] font-bold font-sans tracking-[-0.02em] uppercase text-archival-fg">User Management</h2>
+                <div className="text-[0.625rem] font-mono tracking-widest uppercase text-archival-muted-fg mt-1">
+                  {orgUsers.length}/5 users provisioned
+                </div>
+              </div>
+            </div>
+            <Button onClick={() => setIsUserModalOpen(true)} disabled={orgUsers.length >= 5}>
+              <Plus className="w-4 h-4 mr-2" /> INVITE_USER
+            </Button>
+          </div>
+
+          {orgUsers.length >= 5 && (
+            <div className="p-4 border border-archival-warning bg-archival-warning/5 rounded-[6px]">
+              <div className="text-[10px] font-mono font-bold text-archival-warning tracking-widest uppercase">
+                MAXIMUM_USER_CAPACITY_REACHED
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {orgUsers.map(u => (
+              <div key={u.id} className="border border-archival-muted p-6 bg-archival-surface rounded-[6px] relative group hover:border-archival-accent transition-colors">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="text-[1rem] font-bold tracking-[-0.02em] text-archival-fg truncate">{u.username}</div>
+                      {u.role === "admin" && (
+                        <span className="text-[8px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 bg-archival-accent/10 text-archival-accent rounded border border-archival-accent/30 shrink-0">
+                          ADMIN
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-[0.625rem] font-mono tracking-widest uppercase text-archival-muted-fg">
+                      <Mail className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{u.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      {u.emailVerified ? (
+                        <span className="flex items-center gap-1 text-[8px] font-mono font-bold tracking-widest uppercase text-archival-success">
+                          <UserCheck className="w-3 h-3" /> VERIFIED
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[8px] font-mono font-bold tracking-widest uppercase text-archival-warning">
+                          <Mail className="w-3 h-3" /> PENDING
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {u.id !== user?.userId && (
+                    <div className="flex gap-1">
+                      {!u.emailVerified ? (
+                        <button
+                          onClick={() => handleResendInvite(u.id)}
+                          disabled={resendingUserId === u.id}
+                          className="p-2 text-archival-muted-fg hover:text-archival-accent transition-colors disabled:opacity-50"
+                          title="Resend invite"
+                        >
+                          <Send className={`w-4 h-4 ${resendingUserId === u.id ? 'animate-pulse' : ''}`} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleToggleVerification(u.id, u.emailVerified)}
+                          className="p-2 text-archival-muted-fg hover:text-archival-warning transition-colors"
+                          title="Revoke verification"
+                        >
+                          <ShieldOff className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { setUserToDelete(u.id); setIsDeleteUserModalOpen(true); }}
+                        className="p-2 text-archival-muted-fg hover:text-archival-accent transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="text-[0.625rem] font-mono tracking-widest uppercase text-archival-muted-fg/50 border-t border-archival-muted/20 pt-4 mt-4">
+                  ID: {u.id}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Adafruit IO Accounts */}
       <div className="mb-16 space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -275,6 +488,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Open Data Sources */}
       <div className="mb-16 space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -318,6 +532,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* General Settings */}
       <div className="space-y-0 border-t border-l border-archival-muted/20">
         <h2 className="p-8 border-b border-r border-archival-muted/20 text-[1.5rem] font-bold font-sans tracking-[-0.02em] uppercase text-archival-fg bg-archival-surface">General Settings</h2>
         {configs.map((config) => (
@@ -343,6 +558,62 @@ export default function SettingsPage() {
           </div>
         ))}
       </div>
+
+      {/* Invite User Modal */}
+      <Modal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} title="INVITE_TEAM_MEMBER">
+        <form onSubmit={handleInviteUser} className="space-y-6">
+          <Input 
+            label="Username" 
+            value={userFormData.username} 
+            onChange={e => setUserFormData({...userFormData, username: e.target.value})} 
+            placeholder="e.g. john_doe" 
+            required 
+          />
+          <Input 
+            label="Email Address" 
+            type="email"
+            value={userFormData.email} 
+            onChange={e => setUserFormData({...userFormData, email: e.target.value})} 
+            placeholder="john@example.com" 
+            required 
+          />
+          <div className="space-y-2">
+            <label className="text-[0.75rem] font-mono font-semibold tracking-[0.1em] uppercase text-archival-muted-fg block">Role</label>
+            <div className="flex gap-3">
+              {["user", "admin"].map(role => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setUserFormData({...userFormData, role})}
+                  className={`flex-1 py-3 px-4 rounded-[6px] border text-[11px] font-mono font-bold tracking-[0.2em] uppercase transition-all ${
+                    userFormData.role === role
+                      ? "border-archival-accent bg-archival-accent/10 text-archival-accent"
+                      : "border-archival-muted text-archival-muted-fg hover:border-archival-fg/30"
+                  }`}
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 border border-archival-muted/30 bg-archival-bg/50 rounded-[6px]">
+            <p className="text-[10px] font-mono text-archival-muted-fg leading-relaxed">
+              An invitation email will be sent. The user must verify their email and set a password before they can log in.
+            </p>
+          </div>
+          <div className="pt-6">
+            <Button type="submit" className="w-full">SEND_INVITATION</Button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmationModal
+        isOpen={isDeleteUserModalOpen}
+        onClose={() => setIsDeleteUserModalOpen(false)}
+        onConfirm={handleDeleteUser}
+        title="EXPUNGE_USER_RECORD"
+        message="Are you sure you want to remove this user from the organization? They will lose all access immediately."
+      />
 
       <Modal isOpen={isAccountModalOpen} onClose={() => setIsAccountModalOpen(false)} title={editingAccount ? "EDIT_ACCOUNT_RECORD" : "PROVISION_ACCOUNT_RECORD"}>
         <form onSubmit={handleSaveAccount} className="space-y-6">

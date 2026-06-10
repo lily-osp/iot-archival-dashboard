@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-const secretKey = "archival-secret"; // In production, use process.env.JWT_SECRET
+const secretKey = process.env.JWT_SECRET || "archival-secret";
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
@@ -20,8 +20,15 @@ export async function decrypt(input: string): Promise<any> {
   return payload;
 }
 
-export async function login(userData: { username: string; role: string }) {
-  const expires = new Date(Date.now() + 6 * 60 * 60 * 1000); // 6 hours
+export async function login(userData: {
+  userId: string;
+  username: string;
+  role: string;
+  tenantId: string;
+  tenantName: string;
+  tenantSlug: string;
+}) {
+  const expires = new Date(Date.now() + 6 * 60 * 60 * 1000);
   const session = await encrypt({ ...userData, expires });
 
   const cookieStore = await cookies();
@@ -44,9 +51,8 @@ export async function updateSession(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
   if (!session) return;
 
-  // Refresh the session so it doesn't expire
   const parsed = await decrypt(session);
-  parsed.expires = new Date(Date.now() + 6 * 60 * 60 * 1000); // 6 hours
+  parsed.expires = new Date(Date.now() + 6 * 60 * 60 * 1000);
   const res = NextResponse.next();
   res.cookies.set({
     name: "session",

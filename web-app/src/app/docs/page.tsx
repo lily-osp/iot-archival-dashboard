@@ -2,7 +2,7 @@
 
 import { Shell, Button, cn } from "@/components/ui/archival";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Layers, Zap, Database, Shield, Activity, Move } from "lucide-react";
+import { ArrowLeft, BookOpen, Layers, Zap, Database, Shield, Activity, Move, Users, Mail, UserCheck } from "lucide-react";
 
 export default function DocsPage() {
   return (
@@ -15,14 +15,14 @@ export default function DocsPage() {
         <div className="flex items-center gap-2 mb-3 text-archival-accent">
           <BookOpen className="w-4 h-4" />
           <span className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] uppercase text-archival-muted-fg">
-            SYSTEM_DOCUMENTATION_M1
+            SYSTEM_DOCUMENTATION_V2.0
           </span>
         </div>
         <h1 className="text-[3rem] font-bold tracking-[-0.03em] uppercase font-sans leading-[1.05] text-archival-fg">
           Archival<br />Procedures
         </h1>
         <div className="absolute top-0 right-0 p-4 opacity-5 font-mono text-[10px] tracking-widest uppercase pointer-events-none">
-          DOCS_VERSION_1.0.6
+          DOCS_VERSION_2.0.0
         </div>
       </header>
 
@@ -35,6 +35,7 @@ export default function DocsPage() {
             </div>
             <ul className="space-y-4 text-[0.875rem] font-sans font-medium text-archival-muted-fg">
               <li><a href="#concept" className="hover:text-archival-accent transition-colors">Core Concept</a></li>
+              <li><a href="#user-management" className="hover:text-archival-accent transition-colors">User Management</a></li>
               <li><a href="#multi-account" className="hover:text-archival-accent transition-colors">Multi-Account Hub</a></li>
               <li><a href="#open-data" className="hover:text-archival-accent transition-colors">Virtual Feeds (Open Data)</a></li>
               <li><a href="#data-retention" className="hover:text-archival-accent transition-colors">Data Point Retention</a></li>
@@ -63,6 +64,62 @@ export default function DocsPage() {
               <p>
                 By adopting a strict visual hierarchy—separating narrative content (Plus Jakarta Sans) from technical metadata (JetBrains Mono)—the system ensures that data is both beautiful to observe and rigorous to manage. The system automatically hydrates widgets with their <span className="font-semibold italic">Last Known State</span> from remote feeds upon initialization, ensuring data continuity across reloads.
               </p>
+            </div>
+          </section>
+
+          <div className="border-t border-archival-muted/20" />
+
+          <section id="user-management" className="scroll-mt-12">
+            <div className="flex items-center gap-4 mb-6">
+              <Users className="w-6 h-6 text-archival-accent" />
+              <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">User Management & Authentication</h2>
+            </div>
+            <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
+              <p className="mb-6">
+                The dashboard uses a <span className="font-semibold text-archival-accent">tenant-based multi-user system</span>. Each organization (tenant) can have up to 5 users with role-based access control.
+              </p>
+
+              <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mt-8 mb-4">Roles</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="p-6 border border-archival-muted rounded-[6px] bg-archival-surface">
+                  <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase mb-2">ADMIN</div>
+                  <p className="text-[0.875rem] font-sans text-archival-muted-fg leading-relaxed">Full access. Can invite/remove users, manage system settings, Adafruit IO accounts, and open data sources.</p>
+                </div>
+                <div className="p-6 border border-archival-muted rounded-[6px] bg-archival-surface">
+                  <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase mb-2">USER</div>
+                  <p className="text-[0.875rem] font-sans text-archival-muted-fg leading-relaxed">Can view dashboard, interact with widgets, and view automations. Cannot modify system settings or manage users.</p>
+                </div>
+              </div>
+
+              <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mt-8 mb-4">Registration Flow</h3>
+              <div className="p-6 border-l-4 border-archival-accent bg-archival-surface text-[0.875rem] mb-8">
+                <ol className="list-decimal list-inside space-y-3 font-sans text-archival-muted-fg">
+                  <li>Visit <span className="font-mono text-[0.75rem] bg-archival-bg px-1">/register</span> and enter your Organization Name, Admin Username, Email, and Password.</li>
+                  <li>A verification email is sent via <strong className="text-archival-fg">Resend</strong>. Click the link in the email to verify your address.</li>
+                  <li>After verification, log in at <span className="font-mono text-[0.75rem] bg-archival-bg px-1">/login</span> with your credentials.</li>
+                </ol>
+              </div>
+
+              <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mt-8 mb-4">Inviting Team Members (Admin Only)</h3>
+              <div className="p-6 border-l-4 border-archival-accent bg-archival-surface text-[0.875rem] mb-8">
+                <ol className="list-decimal list-inside space-y-3 font-sans text-archival-muted-fg">
+                  <li>Navigate to <span className="font-mono text-[0.75rem] bg-archival-bg px-1">Settings</span> &gt; <span className="font-mono text-[0.75rem] bg-archival-bg px-1">User Management</span>.</li>
+                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">INVITE_USER</span>.</li>
+                  <li>Enter the user&apos;s username, email, and role (user or admin).</li>
+                  <li>The user receives an email invitation to set their password and activate their account.</li>
+                  <li>Maximum <strong className="text-archival-fg">5 users</strong> per organization.</li>
+                </ol>
+              </div>
+
+              <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mt-8 mb-4">Removing Users (Admin Only)</h3>
+              <div className="p-6 border-l-4 border-archival-accent bg-archival-surface text-[0.875rem]">
+                <ol className="list-decimal list-inside space-y-3 font-sans text-archival-muted-fg">
+                  <li>Navigate to <span className="font-mono text-[0.75rem] bg-archival-bg px-1">Settings</span> &gt; <span className="font-mono text-[0.75rem] bg-archival-bg px-1">User Management</span>.</li>
+                  <li>Click the trash icon next to the user you want to remove.</li>
+                  <li>Confirm the deletion. The user loses access immediately.</li>
+                  <li>Note: Admins cannot remove themselves from the organization.</li>
+                </ol>
+              </div>
             </div>
           </section>
 
@@ -98,7 +155,7 @@ export default function DocsPage() {
                 The dashboard can poll unauthenticated, external APIs (like weather APIs, cryptocurrency trackers, or public transport data) and integrate them natively as <strong className="text-archival-accent">Virtual Feeds</strong>.
               </p>
               <p className="mb-6">
-                These sources are configured using a target URL and a JSON path extractor (e.g., <code className="bg-archival-bg px-1 border border-archival-muted">current.temperature_2m</code>). The system's background BullMQ worker periodically polls the API on a standard CRON schedule.
+                These sources are configured using a target URL and a JSON path extractor (e.g., <code className="bg-archival-bg px-1 border border-archival-muted">current.temperature_2m</code>). The system&apos;s background BullMQ worker periodically polls the API on a standard CRON schedule.
               </p>
               <div className="p-6 border border-archival-muted/50 rounded-[6px] bg-archival-surface mb-6">
                 <h3 className="text-[0.875rem] font-bold tracking-[0.05em] uppercase text-archival-accent mb-4">Bundled Open Source Examples</h3>
@@ -231,10 +288,10 @@ export default function DocsPage() {
                 <strong className="text-archival-accent">Advanced Capability:</strong> Time-based rules can optionally include Condition limits. Before the schedule executes its actions, it queries the local Redis cache for the latest feed states. If the conditions (e.g., <code>temperature &gt; 30</code>) are not met at the exact time of the schedule, the execution is gracefully skipped.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 mt-12">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-12">
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">1. LISTEN & MATCH</div>
-                  <p className="text-[0.75rem]">Subscribes to multiple feeds or cron schedules. Combine conditions using "MATCH ALL" or "MATCH ANY" operators.</p>
+                  <p className="text-[0.75rem]">Subscribes to multiple feeds or cron schedules. Combine conditions using &quot;MATCH ALL&quot; or &quot;MATCH ANY&quot; operators.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">2. EVALUATE</div>
@@ -242,19 +299,19 @@ export default function DocsPage() {
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">3. IF/ELSE IF TRIGGERS</div>
-                  <p className="text-[0.75rem]">Dispatches arrays of actions based on condition evaluation. Supports independent conditions for both IF (True) and ELSE IF (False) outcomes, allowing for multi-state logic routing.</p>
+                  <p className="text-[0.75rem]">Dispatches actions based on condition evaluation. Supports independent conditions for both IF and ELSE IF outcomes.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">4. WEBHOOK DISPATCH</div>
-                  <p className="text-[0.75rem]">Trigger an external API via POST. Payloads support <code className="bg-archival-surface px-1">{"{{feedKey}}"}</code> interpolation to route live values dynamically.</p>
+                  <p className="text-[0.75rem]">Trigger an external API via POST. Payloads support <code className="bg-archival-surface px-1">{"{{feedKey}}"}</code> interpolation.</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
                   <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">5. INTER-WIRING</div>
-                  <p className="text-[0.75rem]">Chain automations by allowing one automation to trigger another, creating complex multi-stage logic pipelines (Max depth of 5 to prevent loops).</p>
+                  <p className="text-[0.75rem]">Chain automations by allowing one automation to trigger another (Max depth of 5 to prevent loops).</p>
                 </div>
                 <div className="p-4 border border-archival-muted rounded bg-archival-bg/30">
-                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">6. MANUAL OVERRIDE (FORCE RUN)</div>
-                  <p className="text-[0.75rem]">Instantly execute any automation rule's action chain directly from the dashboard UI for rapid testing and immediate feedback.</p>
+                  <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase mb-2">6. MANUAL OVERRIDE</div>
+                  <p className="text-[0.75rem]">Instantly execute any automation rule&apos;s action chain directly from the dashboard UI for rapid testing.</p>
                 </div>
               </div>
             </div>
@@ -270,16 +327,6 @@ export default function DocsPage() {
             <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg space-y-8">
               
               <div>
-                <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Adding a New Dashboard</h3>
-                <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
-                  <li>Navigate to the root page (Home).</li>
-                  <li>Click <span className="font-mono text-[0.75rem] bg-archival-bg px-1">NEW_ARCHIVE_SECTOR</span>.</li>
-                  <li>Provide a name for your dashboard and commit the record.</li>
-                  <li>Click on the newly created dashboard block to enter it.</li>
-                </ol>
-              </div>
-
-              <div>
                 <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Placing a Widget (Specimen)</h3>
                 <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
                   <li>Open your desired Dashboard.</li>
@@ -294,7 +341,7 @@ export default function DocsPage() {
                 <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] font-sans mb-4">Rearranging Dashboard Widgets</h3>
                 <ol className="list-decimal list-inside space-y-2 font-sans text-archival-muted-fg text-[0.875rem]">
                   <li>Click the <span className="font-mono text-[0.75rem] bg-archival-bg px-1 text-archival-accent">REARRANGE</span> button in the dashboard header.</li>
-                  <li>Observe that the cursor changes to a "move" icon and widget borders become accentuated.</li>
+                  <li>Observe that the cursor changes to a &quot;move&quot; icon and widget borders become accentuated.</li>
                   <li>Click and hold any widget to drag it to a new position. The grid will automatically reflow.</li>
                   <li>Once satisfied with the arrangement, click <span className="font-mono text-[0.75rem] bg-archival-bg px-1 text-archival-success">SAVE_LAYOUT</span> to persist changes to the database.</li>
                   <li>If you wish to discard changes, click <span className="font-mono text-[0.75rem] bg-archival-bg px-1 text-archival-accent">CANCEL</span>.</li>
@@ -336,12 +383,15 @@ export default function DocsPage() {
               <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] font-sans text-archival-fg">Security Protocol</h2>
             </div>
             <div className="prose prose-archival max-w-none text-[1rem] leading-[1.6] text-archival-fg">
-              <p>
-                The system employs a JWT-based authentication layer. Every collector must register an account and authenticate before the archive allows specimen interaction.
+              <p className="mb-6">
+                The system employs a multi-layered security approach combining JWT authentication, email verification, and role-based access control.
               </p>
-              <ul className="list-disc list-inside mt-4 space-y-2 text-[0.875rem] text-archival-muted-fg">
+              <ul className="list-disc list-inside mt-4 space-y-3 text-[0.875rem] text-archival-muted-fg">
+                <li><strong className="text-archival-fg">JWT Authentication:</strong> Sessions are managed via signed JSON Web Tokens stored in HTTP-only cookies. Tokens expire after 6 hours.</li>
+                <li><strong className="text-archival-fg">Email Verification:</strong> New accounts require email verification via Resend before login is enabled. This prevents unauthorized account creation.</li>
+                <li><strong className="text-archival-fg">Role-Based Access:</strong> Admin and User roles control who can modify system settings, manage users, and configure Adafruit IO accounts.</li>
+                <li><strong className="text-archival-fg">Tenant Isolation:</strong> Each organization operates within its own tenant scope. User management is isolated per organization.</li>
                 <li><strong className="text-archival-fg">Local Isolation:</strong> Your Adafruit IO key never leaves the secure server environment.</li>
-                <li><strong className="text-archival-fg">Session Guard:</strong> Authenticated sessions are tracked via secure-only HTTP cookies.</li>
                 <li><strong className="text-archival-fg">Encryption:</strong> All remote communications use TLS/SSL for both MQTT and HTTP transports.</li>
               </ul>
             </div>

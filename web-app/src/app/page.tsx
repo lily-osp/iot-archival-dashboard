@@ -256,7 +256,11 @@ export default function Home() {
         <div>
           <div className="flex items-center gap-2 museum-label mb-2 text-archival-accent">
             <User className="w-3 h-3" />
-            <span className="text-[10px] font-mono tracking-widest uppercase">AUTHENTICATED_SPECIMEN_COLLECTOR: {user?.username}</span>
+            <span className="text-[10px] font-mono tracking-widest uppercase">
+              {user?.tenantName && <>{user.tenantName} / </>}
+              {user?.username}
+              {user?.role === "admin" && <span className="ml-2 text-archival-warning">[ADMIN]</span>}
+            </span>
           </div>
           <h1 className="text-[3rem] font-bold tracking-[-0.03em] uppercase font-sans whitespace-pre-line leading-[1.05] text-archival-fg">
             {dashboardTitle.replace(" ", "\n")}
