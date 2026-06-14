@@ -10,21 +10,16 @@ services:
       - DATABASE_URL=file:/app/data/dev.db
       - ADAFRUIT_IO_USERNAME=${ADAFRUIT_IO_USERNAME}
       - ADAFRUIT_IO_KEY=${ADAFRUIT_IO_KEY}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://shared-redis:6379/5
       - RESEND_API_KEY=${RESEND_API_KEY}
       - EMAIL_FROM=${EMAIL_FROM:-IoT Archive <noreply@resend.dev>}
       - JWT_SECRET=${JWT_SECRET}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3010}
-    depends_on:
-      - redis
     volumes:
       - ./data:/app/data
+    networks:
+      - shared-redis-net
 
-  redis:
-    image: redis:alpine
-    ports:
-      - "6381:6379"
-    restart: always
-
-volumes:
-  data:
+networks:
+  shared-redis-net:
+    external: true
