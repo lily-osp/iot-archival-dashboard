@@ -62,6 +62,7 @@ The IoT Archival Dashboard treats raw hardware data as curated museum artifacts.
 - **BUTTON (TRIGGER)**: Momentary pulse trigger (sends '1', auto-resets to '0').
 - **SLIDER (RANGE)**: Analog control surface with custom low/high thresholds.
 - **COLOR_PICKER (COLOR)**: Hexadecimal color selection gate (e.g. `#FF0000`).
+- **MAP (GEOLOCATION)**: OpenStreetMap visualization for coordinate data (e.g. `-6.2006,106.82`). Read-only marker rendering, no write/publish control.
 - **DATA_DUMP (WRITE)**: Unlimited capacity buffer for manual configuration payload transmission.
 
 ## Quick Start with Docker

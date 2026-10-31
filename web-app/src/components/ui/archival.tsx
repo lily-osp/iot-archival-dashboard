@@ -5,6 +5,16 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Check, AlertTriangle, Info, X, ChevronDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
+
+const MapWidget = dynamic(() => import("./MapWidget"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full min-h-[220px] items-center justify-center font-mono text-[0.75rem] uppercase tracking-[0.1em] text-archival-muted-fg">
+      LOADING_MAP_RENDER...
+    </div>
+  ),
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -45,7 +55,7 @@ export function MuseumLabel({
   min?: number;
   max?: number;
   className?: string;
-  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button" | "gauge" | "stream" | "color";
+  type?: "monitor" | "switch" | "chart" | "slider" | "indicator" | "text" | "dump" | "button" | "gauge" | "stream" | "color" | "map";
   onControlChange?: (value: string) => void;
   onHeaderClick?: () => void;
   history?: any[];
@@ -77,7 +87,7 @@ export function MuseumLabel({
   return (
     <div className={cn(
       "border border-archival-muted p-6 bg-archival-surface rounded-[6px] animate-entrance relative group transition-all duration-[225ms] ease-[cubic-bezier(0.65,0,0.35,1)] hover:border-archival-accent hover:-translate-y-[2px] flex flex-col", 
-      type === "chart" || type === "dump" ? "col-span-1 md:col-span-2 row-span-1 h-[350px]" : 
+      type === "chart" || type === "dump" || type === "map" ? "col-span-1 md:col-span-2 row-span-1 h-[350px]" : 
       type === "stream" ? "col-span-1 md:col-span-2 row-span-1 min-h-[220px]" : "h-full min-h-[220px]",
       className
     )}>
@@ -306,6 +316,15 @@ export function MuseumLabel({
                 }}
                 className="absolute inset-[-10px] w-[200%] h-[200%] p-0 border-0 cursor-pointer bg-transparent"
               />
+            </div>
+          </div>
+        )}
+
+        {type === "map" && (
+          <div className="flex flex-col gap-3 h-full">
+            <MapWidget value={value} history={history} />
+            <div className="text-[0.625rem] font-mono text-archival-muted-fg uppercase tracking-[0.1em]">
+              GEO_COORDINATE: {value ?? "NO_FIX"}
             </div>
           </div>
         )}

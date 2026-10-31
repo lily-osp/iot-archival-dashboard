@@ -242,7 +242,7 @@ export default function Home() {
   const [formData, setFormData] = useState({
     label: "",
     feedKey: "",
-    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream" | "color",
+    type: "monitor" as "monitor" | "switch" | "chart" | "slider" | "indicator" | "button" | "dump" | "text" | "gauge" | "stream" | "color" | "map",
     unit: "",
     min: "0",
     max: "255",
@@ -409,6 +409,7 @@ export default function Home() {
                 { value: "stream", label: "STREAM (DATA_LOGS)" },
                 { value: "dump", label: "DATA_DUMP (WRITE)" },
                 { value: "color", label: "COLOR_PICKER (COLOR)" },
+{ value: "map", label: "MAP (GEOLOCATION)" },
               ]}
               required
             />
@@ -579,10 +580,13 @@ function RealtimeWidget({ widget, initialValue, onEdit, isRearrangeMode }: { wid
   }, [initialValue]);
 
   const fetchHistory = async () => {
-    if (widget.type !== "chart" && widget.type !== "stream") return;
+    if (widget.type !== "chart" && widget.type !== "stream" && widget.type !== "map") return;
     try {
       const res = await fetch(`/api/feeds/${widget.feedKey}/history`);
-      if (res.ok) setHistory(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(widget.type === "map" ? data.slice(0, 10) : data);
+      }
     } catch (_err) {
       console.error(_err);
     }
@@ -595,8 +599,8 @@ function RealtimeWidget({ widget, initialValue, onEdit, isRearrangeMode }: { wid
     eventSource.onmessage = (event) => {
       if (!event.data.includes("Connected to")) {
         setValue(event.data);
-        if (widget.type === "chart" || widget.type === "stream") {
-          setHistory(prev => [{ value: event.data, created_at: new Date().toISOString() }, ...prev].slice(0, widget.type === "stream" ? 50 : 20));
+        if (widget.type === "chart" || widget.type === "stream" || widget.type === "map") {
+          setHistory(prev => [{ value: event.data, created_at: new Date().toISOString() }, ...prev].slice(0, widget.type === "stream" ? 50 : widget.type === "map" ? 10 : 20));
         }
       }
     };

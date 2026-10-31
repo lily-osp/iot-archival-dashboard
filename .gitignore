@@ -1,17 +1,51 @@
+# Environment
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
-*.db
-*.db-journal
-data/
-.gemini/
-.wrangler/
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Next.js
 .next/
+out/
+
+# Build / artifacts
 dist/
 build/
 *.log
+*.tgz
+coverage/
+
+# Databases / local data
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+data/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+docker-compose.override.yml
+
+# Agent / Project Guardian
+.gemini/
+.wrangler/
+.cache/
+memory.db
+memory.db-journal
+hela-runs.db*
+
+# Misc
+*.pem

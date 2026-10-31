@@ -211,7 +211,8 @@ export default function DocsPage() {
                 { name: "GAUGE (DIAL)", desc: "Semi-circular analog dial indicating a value's position between a configured minimum and maximum threshold." },
                 { name: "STREAM (DATA_LOGS)", desc: "A live, scrolling terminal-like stream of historical and incoming string or numeric data events." },
                 { name: "COLOR_PICKER (COLOR)", desc: "Hexadecimal color selection gate. Sends hex color codes to the attached feed." },
-                { name: "DATA_DUMP (WRITE)", desc: "Unlimited capacity buffer for sending large string configurations or manual logs." }
+                { name: "DATA_DUMP (WRITE)", desc: "Unlimited capacity buffer for sending large string configurations or manual logs." },
+{ name: "MAP (GEOLOCATION)", desc: "OpenStreetMap-based visualization for coordinate data such as '-6.2006,106.82'. Read-only, centers a marker on the latest latitude/longitude pair." }
               ].map((type) => (
                 <div key={type.name} className="p-6 border border-archival-muted rounded-[6px] bg-archival-surface">
                   <div className="text-[0.625rem] font-mono font-semibold tracking-[0.1em] text-archival-accent uppercase mb-2">{type.name}</div>

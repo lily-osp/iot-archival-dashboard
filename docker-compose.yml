@@ -19,7 +19,10 @@ services:
       - ./data:/app/data
     networks:
       - shared-redis-net
+      - shared-caddy-net
 
 networks:
   shared-redis-net:
+    external: true
+  shared-caddy-net:
     external: true
